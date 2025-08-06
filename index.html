@@ -541,7 +541,7 @@
             redraw();
         }
 
-        function saveTemplate() {
+        async function saveTemplate() {
             const templateName = document.getElementById('templateName').value.trim();
             if (!templateName) {
                 alert('Please enter a template name');
@@ -569,12 +569,22 @@
                     }))
                 };
                 
-                const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
-                savedTemplates[templateName] = template;
-                localStorage.setItem('photoFrameTemplates', JSON.stringify(savedTemplates));
-                
-                alert('Template saved successfully!');
-                document.getElementById('templateName').value = '';
+                const response = await fetch('http://localhost:3000/api/templates', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(template)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Template saved successfully!');
+                    document.getElementById('templateName').value = '';
+                } else {
+                    alert(`Error saving template: ${result.error}`);
+                }
                 
             } catch (error) {
                 console.error('Error saving template:', error);
@@ -583,50 +593,69 @@
         }
 
         // User mode functions
-        function loadTemplatesList() {
+        async function loadTemplatesList() {
             const select = document.getElementById('templateSelect');
             select.innerHTML = '<option value="">-- Select Template --</option>';
             
-            const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
-            Object.keys(savedTemplates).forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                select.appendChild(option);
-            });
+            try {
+                const response = await fetch('http://localhost:3000/api/templates');
+                const result = await response.json();
+
+                if (response.ok) {
+                    result.data.forEach(template => {
+                        const option = document.createElement('option');
+                        option.value = template.name;
+                        option.textContent = template.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    console.error('Error loading templates:', result.error);
+                }
+            } catch (error) {
+                console.error('Error fetching templates:', error);
+            }
         }
 
-        function loadTemplate() {
+        async function loadTemplate() {
             const templateName = document.getElementById('templateSelect').value;
             if (!templateName) return;
             
-            const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
-            currentTemplate = savedTemplates[templateName];
-            
-            if (!currentTemplate) return;
+            try {
+                const response = await fetch(`http://localhost:3000/api/templates?name=${encodeURIComponent(templateName)}`);
+                const result = await response.json();
 
-            // Set canvas size from template
-            canvasWidth = currentTemplate.canvasWidth;
-            canvasHeight = currentTemplate.canvasHeight;
-            canvas.width = canvasWidth;
-            canvas.height = canvasHeight;
-            
-            const img = new Image();
-            img.onload = function() {
-                frameImage = img;
-                resizeCanvas(); // Adjust display size
-                redraw();
-            };
-            img.src = currentTemplate.frame;
-            
-            textFields = currentTemplate.textFields.map((fieldConfig, index) => ({
-                ...fieldConfig,
-                id: 'user_' + index,
-                text: '' // Start with empty text
-            }));
+                if (response.ok && result.data.length > 0) {
+                    currentTemplate = result.data[0];
 
-            createUserInputFields();
-            redraw();
+                    // Set canvas size from template
+                    canvasWidth = currentTemplate.canvasWidth;
+                    canvasHeight = currentTemplate.canvasHeight;
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+                    
+                    const img = new Image();
+                    img.onload = function() {
+                        frameImage = img;
+                        resizeCanvas(); // Adjust display size
+                        redraw();
+                    };
+                    img.src = currentTemplate.frame;
+                    
+                    textFields = currentTemplate.textFields.map((fieldConfig, index) => ({
+                        ...fieldConfig,
+                        id: 'user_' + index,
+                        text: '' // Start with empty text
+                    }));
+
+                    createUserInputFields();
+                    redraw();
+                } else {
+                    alert(`Error loading template: ${result.error || 'Template not found'}`);
+                }
+            } catch (error) {
+                console.error('Error fetching template:', error);
+                alert('Error fetching template: ' + error.message);
+            }
         }
 
         function createUserInputFields() {
@@ -660,35 +689,85 @@
             redraw();
         }
 
-        function deleteTemplate() {
+        async function deleteTemplate() {
             const templateName = document.getElementById('templateSelect').value;
-            if (!templateName || !confirm(`Are you sure you want to delete template "${templateName}"?`)) return;
+            if (!templateName) {
+                alert('Please select a template to delete');
+                return;
+            }
             
-            const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
-            delete savedTemplates[templateName];
-            localStorage.setItem('photoFrameTemplates', JSON.stringify(savedTemplates));
+            if (!confirm(`Are you sure you want to delete template "${templateName}"?`)) {
+                return;
+            }
             
-            loadTemplatesList();
+            try {
+                const response = await fetch(`http://localhost:3000/api/templates/${encodeURIComponent(templateName)}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Template deleted successfully!');
+                    // Refresh template list
+                    loadTemplatesList();
+                    
+                    // Clear current template if it was the deleted one
+                    if (currentTemplate && currentTemplate.name === templateName) {
+                        currentTemplate = null; frameImage = null; textFields = []; userPhoto = null;
+                        document.getElementById('userTextInputs').innerHTML = '';
+                        redraw();
+                    }
+                } else {
+                    alert(`Error deleting template: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error deleting template:', error);
+                alert('Error deleting template: ' + error.message);
+            }
+        }
+
+        async function clearAllTemplates() {
+            try {
+                const response = await fetch('http://localhost:3000/api/templates');
+                const result = await response.json();
+
+                if (!response.ok) {
+                    alert(`Error fetching templates to clear: ${result.error}`);
+                    return;
+                }
+
+                const savedTemplates = result.data;
+                const templateCount = savedTemplates.length;
             
-            if (currentTemplate && currentTemplate.name === templateName) {
+                if (templateCount === 0) {
+                    alert('No templates to clear!');
+                    return;
+                }
+                
+                if (!confirm(`Are you sure you want to delete ALL ${templateCount} templates? This cannot be undone!`)) {
+                    return;
+                }
+
+                for (const template of savedTemplates) {
+                    await fetch(`http://localhost:3000/api/templates/${encodeURIComponent(template.name)}`, {
+                        method: 'DELETE'
+                    });
+                }
+                
+                // Refresh template list
+                loadTemplatesList();
+                
+                // Clear current template
                 currentTemplate = null; frameImage = null; textFields = []; userPhoto = null;
                 document.getElementById('userTextInputs').innerHTML = '';
                 redraw();
-            }
-            alert('Template deleted successfully!');
-        }
+                
+                alert(`All ${templateCount} templates have been deleted!`);
 
-        function clearAllTemplates() {
-            const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
-            const templateCount = Object.keys(savedTemplates).length;
-            if (templateCount === 0 || !confirm(`Are you sure you want to delete ALL ${templateCount} templates?`)) return;
-            
-            localStorage.removeItem('photoFrameTemplates');
-            loadTemplatesList();
-            currentTemplate = null; frameImage = null; textFields = []; userPhoto = null;
-            document.getElementById('userTextInputs').innerHTML = '';
-            redraw();
-            alert(`All ${templateCount} templates have been deleted!`);
+            } catch (error) {
+                console.error('Error clearing all templates:', error);
+                alert('Error clearing all templates: ' + error.message);
+            }
         }
 
         function handlePhotoUpload(e) {
@@ -731,7 +810,16 @@
             redraw();
 
             const link = document.createElement('a');
-            link.download = 'thumbnail.png';
+            let filename = 'thumbnail.png';
+
+            // Try to get the text from the first user input field
+            const firstTextInput = document.querySelector('.user-text-input');
+            if (firstTextInput && firstTextInput.value) {
+                // Sanitize the text for use as a filename
+                filename = firstTextInput.value.replace(/[^a-z0-9_.-]/gi, '_') + '.png';
+            }
+
+            link.download = filename;
             link.href = canvas.toDataURL('image/png', 1.0);
             document.body.appendChild(link);
             link.click();
