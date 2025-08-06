@@ -82,7 +82,7 @@ app.post('/api/templates', async (req, res) => {
             message: 'Template saved successfully'
         });
     } catch (err) {
-        console.error('Error saving template:', err.message);
+        console.error('Error saving template to MySQL:', err);
         if (err.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: 'Template name already exists' });
         }
