@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Photo Frame Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .canvas-container {
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            max-width: 100%;
+            max-height: 80vh;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            max-width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+        
+        .mode-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen py-8">
+    <div class="container mx-auto px-4 max-w-7xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Simple Photo Frame Generator</h1>
+            <p class="text-gray-600">Create templates or use them to generate custom frames</p>
+        </div>
+        
+        <!-- Mode Switcher -->
+        <div class="flex justify-center mb-8">
+            <div class="bg-white rounded-lg p-2 shadow-lg">
+                <button id="adminModeBtn" class="mode-btn px-6 py-2 rounded-md font-semibold active">
+                    👨‍💻 Admin Mode
+                </button>
+                <button id="userModeBtn" class="mode-btn px-6 py-2 rounded-md font-semibold">
+                    👤 User Mode
+                </button>
+            </div>
+        </div>
+        
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Canvas Area -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-xl p-6">
+                    <div class="flex justify-center mb-4">
+                        <div class="canvas-container w-full max-w-2xl">
+                            <canvas id="canvas" width="1080" height="1080"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Controls Panel -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-xl p-6">
+                    
+                    <!-- Admin Mode Controls -->
+                    <div id="adminControls" class="space-y-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Admin Controls</h3>
+                        
+                        <!-- Frame Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Frame (PNG)</label>
+                            <input type="file" id="frameUpload" accept="image/png" class="hidden">
+                            <button onclick="document.getElementById('frameUpload').click()" 
+                                    class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                🖼️ Choose Frame
+                            </button>
+                            <div id="frameStatus" class="mt-2 text-sm text-gray-600"></div>
+                        </div>
+                        
+                        <!-- Add Text Field -->
+                        <div>
+                            <button id="addTextFieldBtn" 
+                                    class="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                ➕ Add Text Field
+                            </button>
+                        </div>
+                        
+                        <!-- Text Field Properties -->
+                        <div id="textFieldProperties" class="hidden">
+                            <h4 class="font-semibold text-gray-700 mb-2">Text Properties:</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Label:</label>
+                                    <input type="text" id="fieldLabel" value="Name" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Font Size:</label>
+                                    <input type="number" id="fieldFontSize" min="12" max="100" value="36" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Box Width:</label>
+                                    <input type="number" id="fieldWidth" min="50" max="500" value="200" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Box Height:</label>
+                                    <input type="number" id="fieldHeight" min="30" max="200" value="50" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Color:</label>
+                                    <input type="color" id="fieldColor" value="#ffffff" class="w-full h-10 border rounded-md">
+                                </div>
+                                <button id="deleteFieldBtn" class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    🗑️ Delete Field
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Save Template -->
+                        <div>
+                            <input type="text" id="templateName" placeholder="Template name..." class="w-full px-3 py-2 border rounded-md mb-2">
+                            <button id="saveTemplateBtn" 
+                                    class="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                                💾 Save Template
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- User Mode Controls -->
+                    <div id="userControls" class="space-y-6 hidden">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">User Controls</h3>
+                        
+                        <!-- Load Template -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Template:</label>
+                            <select id="templateSelect" class="w-full px-3 py-2 border rounded-md mb-2">
+                                <option value="">-- Select Template --</option>
+                            </select>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="loadTemplateBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                    📂 Load
+                                </button>
+                                <button id="deleteTemplateBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                            <button id="clearAllTemplatesBtn" class="w-full mt-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">
+                                🗑️ Clear All Templates
+                            </button>
+                        </div>
+                        
+                        <!-- Photo Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Photo:</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="file" id="photoUpload" accept="image/*" class="hidden">
+                                <button onclick="document.getElementById('photoUpload').click()" 
+                                        class="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                    📸 Choose Photo
+                                </button>
+                                <button id="deletePhotoBtn" class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    🗑️ Delete Photo
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Text Inputs -->
+                        <div id="userTextInputs" class="space-y-3">
+                            <!-- Dynamic inputs will appear here -->
+                        </div>
+                        
+                        <!-- Download -->
+                        <div>
+                            <button id="downloadBtn" 
+                                    class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                ⬇️ Download Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let canvas, ctx;
+        let currentMode = 'admin';
+        let currentTemplate = null;
+        let canvasWidth = 1080, canvasHeight = 1080; // Default canvas size
+        
+        // Canvas objects
+        let frameImage = null;
+        let userPhoto = null;
+        let textFields = [];
+        let selectedTextField = null;
+        
+        // Mouse handling for admin text fields
+        let isDragging = false;
+        let isResizing = false;
+        let dragStartX, dragStartY;
+
+        // Mouse handling for user photo
+        let isDraggingPhoto = false;
+        let isResizingPhoto = false;
+        let dragStartPhotoX, dragStartPhotoY;
+        let dragStartPhotoWidth, dragStartPhotoHeight;
+
+        // Initialize
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            
+            clearCanvas();
+            
+            if ('fonts' in document) {
+                document.fonts.ready.then(() => {
+                    console.log('Fonts loaded');
+                    redraw();
+                });
+            }
+            
+            resizeCanvas();
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function wrapText(context, text, maxWidth) {
+            if (!text) return [];
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = words[0] || '';
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const width = context.measureText(currentLine + " " + word).width;
+                if (width < maxWidth) {
+                    currentLine += " " + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        function redraw() {
+            ctx.save();
+            clearCanvas();
+            
+            // Draw user photo (back layer)
+            if (userPhoto) {
+                ctx.drawImage(userPhoto.img, userPhoto.x, userPhoto.y, userPhoto.width, userPhoto.height);
+                
+                // Draw selection border and handle in user mode (but not for download)
+                if (currentMode === 'user') {
+                    ctx.strokeStyle = '#4f46e5';
+                    ctx.lineWidth = 4; // Thicker for visibility on high-res canvas
+                    ctx.strokeRect(userPhoto.x, userPhoto.y, userPhoto.width, userPhoto.height);
+
+                    const handleSize = 20; // Bigger handle
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.fillRect(userPhoto.x + userPhoto.width - handleSize / 2, userPhoto.y + userPhoto.height - handleSize / 2, handleSize, handleSize);
+                }
+            }
+            
+            // Draw frame (middle layer)
+            if (frameImage) {
+                ctx.drawImage(frameImage, 0, 0, canvasWidth, canvasHeight);
+            }
+            
+            // Draw text fields (front layer)
+            textFields.forEach(field => {
+                if (currentMode === 'admin') {
+                    ctx.fillStyle = 'rgba(0, 100, 255, 0.1)';
+                    ctx.fillRect(field.x, field.y, field.width, field.height);
+                    ctx.strokeStyle = '#4f46e5';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([6, 6]);
+                    ctx.strokeRect(field.x, field.y, field.width, field.height);
+                    ctx.setLineDash([]);
+                }
+                
+                ctx.font = `bold ${field.fontSize}px Poppins, Arial Black, Arial`;
+                ctx.fillStyle = field.color;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+
+                const textToDraw = field.text || field.label;
+                const lines = wrapText(ctx, textToDraw, field.width - 20);
+                const lineHeight = field.fontSize * 1.2;
+                const textHeight = lines.length * lineHeight;
+                let y = field.y + (field.height - textHeight) / 2;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(field.x, field.y, field.width, field.height);
+                ctx.clip();
+
+                for (const line of lines) {
+                    ctx.fillText(line, field.x + 10, y);
+                    y += lineHeight;
+                }
+                ctx.restore();
+                
+                if (currentMode === 'admin' && selectedTextField === field) {
+                    ctx.strokeStyle = '#4f46e5';
+                    ctx.lineWidth = 6;
+                    ctx.strokeRect(field.x, field.y, field.width, field.height);
+                    
+                    const handleSize = 16;
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.fillRect(field.x + field.width - handleSize/2, field.y + field.height - handleSize/2, handleSize, handleSize);
+                }
+            });
+            ctx.restore();
+        }
+
+        // Mouse handling
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            if (currentMode === 'admin') {
+                for (let field of textFields) {
+                    const handleSize = 16;
+                    if (mouseX >= field.x + field.width - handleSize && mouseX <= field.x + field.width + handleSize &&
+                        mouseY >= field.y + field.height - handleSize && mouseY <= field.y + field.height + handleSize) {
+                        selectedTextField = field;
+                        isResizing = true;
+                        dragStartX = mouseX;
+                        dragStartY = mouseY;
+                        updateTextFieldProperties();
+                        canvas.style.cursor = 'se-resize';
+                        redraw();
+                        return;
+                    }
+                    
+                    if (mouseX >= field.x && mouseX <= field.x + field.width && 
+                        mouseY >= field.y && mouseY <= field.y + field.height) {
+                        selectedTextField = field;
+                        isDragging = true;
+                        dragStartX = mouseX - field.x;
+                        dragStartY = mouseY - field.y;
+                        updateTextFieldProperties();
+                        canvas.style.cursor = 'move';
+                        redraw();
+                        return;
+                    }
+                }
+                selectedTextField = null;
+                hideTextFieldProperties();
+                canvas.style.cursor = 'crosshair';
+                redraw();
+
+            } else if (currentMode === 'user' && userPhoto) {
+                const handleSize = 20;
+                if (mouseX >= userPhoto.x + userPhoto.width - handleSize / 2 && mouseX <= userPhoto.x + userPhoto.width + handleSize / 2 &&
+                    mouseY >= userPhoto.y + userPhoto.height - handleSize / 2 && mouseY <= userPhoto.y + userPhoto.height + handleSize / 2) {
+                    isResizingPhoto = true;
+                    dragStartX = mouseX;
+                    dragStartPhotoWidth = userPhoto.width;
+                    canvas.style.cursor = 'se-resize';
+                    return;
+                }
+
+                if (mouseX >= userPhoto.x && mouseX <= userPhoto.x + userPhoto.width &&
+                    mouseY >= userPhoto.y && mouseY <= userPhoto.y + userPhoto.height) {
+                    isDraggingPhoto = true;
+                    dragStartPhotoX = mouseX - userPhoto.x;
+                    dragStartPhotoY = mouseY - userPhoto.y;
+                    canvas.style.cursor = 'move';
+                    return;
+                }
+            }
+        }
+
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            if (currentMode === 'admin') {
+                if (isDragging && selectedTextField) {
+                    selectedTextField.x = mouseX - dragStartX;
+                    selectedTextField.y = mouseY - dragStartY;
+                    redraw();
+                } else if (isResizing && selectedTextField) {
+                    const newWidth = Math.max(50, mouseX - selectedTextField.x);
+                    const newHeight = Math.max(30, mouseY - selectedTextField.y);
+                    selectedTextField.width = newWidth;
+                    selectedTextField.height = newHeight;
+                    document.getElementById('fieldWidth').value = newWidth;
+                    document.getElementById('fieldHeight').value = newHeight;
+                    redraw();
+                } else {
+                    let cursor = 'crosshair';
+                    for (let field of textFields) {
+                        const handleSize = 16;
+                        if (mouseX >= field.x + field.width - handleSize && mouseX <= field.x + field.width + handleSize &&
+                            mouseY >= field.y + field.height - handleSize && mouseY <= field.y + field.height + handleSize) {
+                            cursor = 'se-resize'; break;
+                        }
+                        if (mouseX >= field.x && mouseX <= field.x + field.width && 
+                            mouseY >= field.y && mouseY <= field.y + field.height) {
+                            cursor = 'move'; break;
+                        }
+                    }
+                    canvas.style.cursor = cursor;
+                }
+            } else if (currentMode === 'user' && userPhoto) {
+                if (isDraggingPhoto) {
+                    userPhoto.x = mouseX - dragStartPhotoX;
+                    userPhoto.y = mouseY - dragStartPhotoY;
+                    redraw();
+                } else if (isResizingPhoto) {
+                    const dx = mouseX - dragStartX;
+                    const newWidth = Math.max(50, dragStartPhotoWidth + dx);
+                    const aspectRatio = userPhoto.img.height / userPhoto.img.width;
+                    userPhoto.width = newWidth;
+                    userPhoto.height = newWidth * aspectRatio;
+                    redraw();
+                } else {
+                    let cursor = 'default';
+                    const handleSize = 20;
+                    if (mouseX >= userPhoto.x + userPhoto.width - handleSize / 2 && mouseX <= userPhoto.x + userPhoto.width + handleSize / 2 &&
+                        mouseY >= userPhoto.y + userPhoto.height - handleSize / 2 && mouseY <= userPhoto.y + userPhoto.height + handleSize / 2) {
+                        cursor = 'se-resize';
+                    } else if (mouseX >= userPhoto.x && mouseX <= userPhoto.x + userPhoto.width &&
+                               mouseY >= userPhoto.y && mouseY <= userPhoto.y + userPhoto.height) {
+                        cursor = 'move';
+                    }
+                    canvas.style.cursor = cursor;
+                }
+            }
+        }
+
+        function handleMouseUp(e) {
+            isDragging = isResizing = isDraggingPhoto = isResizingPhoto = false;
+            if (currentMode === 'admin') canvas.style.cursor = 'crosshair';
+            else canvas.style.cursor = 'default';
+        }
+
+        // Admin mode functions
+        function handleFrameUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    frameImage = img;
+                    // Set canvas dimensions to match the frame
+                    canvasWidth = img.width;
+                    canvasHeight = img.height;
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+
+                    resizeCanvas(); // Adjust display size
+                    redraw();
+                    document.getElementById('frameStatus').textContent = `Frame loaded: ${file.name} (${img.width}x${img.height})`;
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addTextField() {
+            const newField = {
+                id: 'field_' + Date.now(),
+                label: 'Text Field',
+                text: 'Sample Text',
+                x: 100,
+                y: 100,
+                width: 400, // Larger default size
+                height: 100,
+                fontSize: 72, // Larger default font
+                color: '#ffffff'
+            };
+            
+            textFields.push(newField);
+            selectedTextField = newField;
+            updateTextFieldProperties();
+            redraw();
+        }
+
+        function updateTextFieldProperties() {
+            if (!selectedTextField) return;
+            
+            document.getElementById('textFieldProperties').classList.remove('hidden');
+            document.getElementById('fieldLabel').value = selectedTextField.label;
+            document.getElementById('fieldFontSize').value = selectedTextField.fontSize;
+            document.getElementById('fieldWidth').value = selectedTextField.width;
+            document.getElementById('fieldHeight').value = selectedTextField.height;
+            document.getElementById('fieldColor').value = selectedTextField.color;
+        }
+
+        function hideTextFieldProperties() {
+            document.getElementById('textFieldProperties').classList.add('hidden');
+        }
+
+        function updateSelectedTextField() {
+            if (!selectedTextField) return;
+            
+            selectedTextField.label = document.getElementById('fieldLabel').value;
+            selectedTextField.fontSize = parseInt(document.getElementById('fieldFontSize').value);
+            selectedTextField.width = parseInt(document.getElementById('fieldWidth').value);
+            selectedTextField.height = parseInt(document.getElementById('fieldHeight').value);
+            selectedTextField.color = document.getElementById('fieldColor').value;
+            
+            redraw();
+        }
+
+        function deleteSelectedTextField() {
+            if (!selectedTextField) return;
+            
+            textFields = textFields.filter(f => f !== selectedTextField);
+            selectedTextField = null;
+            hideTextFieldProperties();
+            redraw();
+        }
+
+        function saveTemplate() {
+            const templateName = document.getElementById('templateName').value.trim();
+            if (!templateName) {
+                alert('Please enter a template name');
+                return;
+            }
+            if (!frameImage) {
+                alert('Please upload a frame first');
+                return;
+            }
+            
+            try {
+                const template = {
+                    name: templateName,
+                    frame: frameImage.src,
+                    canvasWidth: canvasWidth,
+                    canvasHeight: canvasHeight,
+                    textFields: textFields.map(field => ({
+                        label: field.label,
+                        x: field.x,
+                        y: field.y,
+                        width: field.width,
+                        height: field.height,
+                        fontSize: field.fontSize,
+                        color: field.color
+                    }))
+                };
+                
+                const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
+                savedTemplates[templateName] = template;
+                localStorage.setItem('photoFrameTemplates', JSON.stringify(savedTemplates));
+                
+                alert('Template saved successfully!');
+                document.getElementById('templateName').value = '';
+                
+            } catch (error) {
+                console.error('Error saving template:', error);
+                alert('Error saving template: ' + error.message);
+            }
+        }
+
+        // User mode functions
+        function loadTemplatesList() {
+            const select = document.getElementById('templateSelect');
+            select.innerHTML = '<option value="">-- Select Template --</option>';
+            
+            const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
+            Object.keys(savedTemplates).forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+        }
+
+        function loadTemplate() {
+            const templateName = document.getElementById('templateSelect').value;
+            if (!templateName) return;
+            
+            const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
+            currentTemplate = savedTemplates[templateName];
+            
+            if (!currentTemplate) return;
+
+            // Set canvas size from template
+            canvasWidth = currentTemplate.canvasWidth;
+            canvasHeight = currentTemplate.canvasHeight;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            const img = new Image();
+            img.onload = function() {
+                frameImage = img;
+                resizeCanvas(); // Adjust display size
+                redraw();
+            };
+            img.src = currentTemplate.frame;
+            
+            textFields = currentTemplate.textFields.map((fieldConfig, index) => ({
+                ...fieldConfig,
+                id: 'user_' + index,
+                text: '' // Start with empty text
+            }));
+
+            createUserInputFields();
+            redraw();
+        }
+
+        function createUserInputFields() {
+            const container = document.getElementById('userTextInputs');
+            container.innerHTML = '';
+            
+            if (!currentTemplate || !currentTemplate.textFields) return;
+            
+            currentTemplate.textFields.forEach((field, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label class="block text-sm font-medium text-gray-600">${field.label}:</label>
+                    <input type="text" data-field-index="${index}" 
+                           class="user-text-input w-full px-3 py-2 border rounded-md" 
+                           placeholder="Enter ${field.label}...">
+                `;
+                container.appendChild(div);
+            });
+            
+            document.querySelectorAll('.user-text-input').forEach(input => {
+                input.addEventListener('input', updateUserText);
+            });
+        }
+
+        function updateUserText(e) {
+            const fieldIndex = parseInt(e.target.dataset.fieldIndex);
+            const text = e.target.value;
+            if(textFields[fieldIndex]) {
+                textFields[fieldIndex].text = text;
+            }
+            redraw();
+        }
+
+        function deleteTemplate() {
+            const templateName = document.getElementById('templateSelect').value;
+            if (!templateName || !confirm(`Are you sure you want to delete template "${templateName}"?`)) return;
+            
+            const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
+            delete savedTemplates[templateName];
+            localStorage.setItem('photoFrameTemplates', JSON.stringify(savedTemplates));
+            
+            loadTemplatesList();
+            
+            if (currentTemplate && currentTemplate.name === templateName) {
+                currentTemplate = null; frameImage = null; textFields = []; userPhoto = null;
+                document.getElementById('userTextInputs').innerHTML = '';
+                redraw();
+            }
+            alert('Template deleted successfully!');
+        }
+
+        function clearAllTemplates() {
+            const savedTemplates = JSON.parse(localStorage.getItem('photoFrameTemplates') || '{}');
+            const templateCount = Object.keys(savedTemplates).length;
+            if (templateCount === 0 || !confirm(`Are you sure you want to delete ALL ${templateCount} templates?`)) return;
+            
+            localStorage.removeItem('photoFrameTemplates');
+            loadTemplatesList();
+            currentTemplate = null; frameImage = null; textFields = []; userPhoto = null;
+            document.getElementById('userTextInputs').innerHTML = '';
+            redraw();
+            alert(`All ${templateCount} templates have been deleted!`);
+        }
+
+        function handlePhotoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const scale = Math.min(canvasWidth / img.width, canvasHeight / img.height);
+                    const scaledWidth = img.width * scale;
+                    const scaledHeight = img.height * scale;
+                    
+                    userPhoto = {
+                        img: img,
+                        x: (canvasWidth - scaledWidth) / 2,
+                        y: (canvasHeight - scaledHeight) / 2,
+                        width: scaledWidth,
+                        height: scaledHeight
+                    };
+                    
+                    redraw();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function deletePhoto() {
+            if (userPhoto) {
+                userPhoto = null;
+                redraw();
+            }
+        }
+
+        function downloadImage() {
+            const originalMode = currentMode;
+            currentMode = 'download'; // Set a temporary mode to prevent drawing handles
+            redraw();
+
+            const link = document.createElement('a');
+            link.download = 'thumbnail.png';
+            link.href = canvas.toDataURL('image/png', 1.0);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            currentMode = originalMode; // Restore the mode
+            redraw(); // Redraw again with handles if needed
+        }
+
+        // Mode switching
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            document.getElementById('adminModeBtn').classList.toggle('active', mode === 'admin');
+            document.getElementById('userModeBtn').classList.toggle('active', mode === 'user');
+            document.getElementById('adminControls').classList.toggle('hidden', mode !== 'admin');
+            document.getElementById('userControls').classList.toggle('hidden', mode !== 'user');
+            
+            // Reset canvas state on mode switch
+            userPhoto = null;
+            textFields = [];
+            selectedTextField = null;
+            hideTextFieldProperties();
+
+            if (mode === 'user') {
+                loadTemplatesList();
+            } else {
+                 // Clear user-specific things
+                document.getElementById('userTextInputs').innerHTML = '';
+            }
+            
+            redraw();
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const containerWidth = container.clientWidth - 4;
+            const containerHeight = window.innerHeight * 0.8;
+            
+            const scale = Math.min(containerWidth / canvasWidth, containerHeight / canvasHeight, 1);
+            
+            canvas.style.width = (canvasWidth * scale) + 'px';
+            canvas.style.height = (canvasHeight * scale) + 'px';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            
+            document.getElementById('adminModeBtn').onclick = () => switchMode('admin');
+            document.getElementById('userModeBtn').onclick = () => switchMode('user');
+            
+            // Admin events
+            document.getElementById('frameUpload').addEventListener('change', handleFrameUpload);
+            document.getElementById('addTextFieldBtn').onclick = addTextField;
+            document.getElementById('saveTemplateBtn').onclick = saveTemplate;
+            document.getElementById('deleteFieldBtn').onclick = deleteSelectedTextField;
+            
+            document.getElementById('fieldLabel').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldFontSize').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldWidth').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldHeight').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldColor').addEventListener('input', updateSelectedTextField);
+            
+            // User events
+            document.getElementById('loadTemplateBtn').onclick = loadTemplate;
+            document.getElementById('deleteTemplateBtn').onclick = deleteTemplate;
+            document.getElementById('clearAllTemplatesBtn').onclick = clearAllTemplates;
+            document.getElementById('photoUpload').addEventListener('change', handlePhotoUpload);
+            document.getElementById('deletePhotoBtn').onclick = deletePhoto;
+            document.getElementById('downloadBtn').onclick = downloadImage;
+            
+            window.addEventListener('resize', resizeCanvas);
+        });
+    </script>
+</body>
+</html>
