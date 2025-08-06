@@ -569,7 +569,9 @@
                     }))
                 };
                 
-                const response = await fetch('http://localhost:3000/api/templates', {
+                console.log("Sending template:", template);
+
+                const response = await fetch('/api/templates', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -578,6 +580,7 @@
                 });
 
                 const result = await response.json();
+                console.log("Server response:", result);
 
                 if (response.ok) {
                     alert('Template saved successfully!');
@@ -598,7 +601,7 @@
             select.innerHTML = '<option value="">-- Select Template --</option>';
             
             try {
-                const response = await fetch('http://localhost:3000/api/templates');
+                const response = await fetch('/api/templates');
                 const result = await response.json();
 
                 if (response.ok) {
@@ -621,7 +624,7 @@
             if (!templateName) return;
             
             try {
-                const response = await fetch(`http://localhost:3000/api/templates?name=${encodeURIComponent(templateName)}`);
+                const response = await fetch(`/api/templates?name=${encodeURIComponent(templateName)}`);
                 const result = await response.json();
 
                 if (response.ok && result.data.length > 0) {
@@ -701,7 +704,7 @@
             }
             
             try {
-                const response = await fetch(`http://localhost:3000/api/templates/${encodeURIComponent(templateName)}`, {
+                const response = await fetch(`/api/templates/${encodeURIComponent(templateName)}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
@@ -728,7 +731,7 @@
 
         async function clearAllTemplates() {
             try {
-                const response = await fetch('http://localhost:3000/api/templates');
+                const response = await fetch('/api/templates');
                 const result = await response.json();
 
                 if (!response.ok) {
@@ -749,7 +752,7 @@
                 }
 
                 for (const template of savedTemplates) {
-                    await fetch(`http://localhost:3000/api/templates/${encodeURIComponent(template.name)}`, {
+                    await fetch(`/api/templates/${encodeURIComponent(template.name)}`, {
                         method: 'DELETE'
                     });
                 }
@@ -768,7 +771,6 @@
                 console.error('Error clearing all templates:', error);
                 alert('Error clearing all templates: ' + error.message);
             }
-        }
 
         function handlePhotoUpload(e) {
             const file = e.target.files[0];
