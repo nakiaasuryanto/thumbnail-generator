@@ -115,6 +115,7 @@
                                     <label class="block text-sm font-medium text-gray-600">Font Family:</label>
                                     <select id="fieldFont" class="w-full px-3 py-2 border rounded-md">
                                         <option value="Poppins">Poppins</option>
+                                        <option value="SF Pro Display">SF Pro Display</option>
                                         <option value="Montserrat">Montserrat</option>
                                         <option value="Inter">Inter</option>
                                         <option value="Roboto">Roboto</option>
@@ -303,7 +304,16 @@
                 
                 const fontWeight = field.fontWeight || '700';
                 const fontFamily = field.fontFamily || 'Poppins';
-                ctx.font = `${fontWeight} ${field.fontSize}px ${fontFamily}, Arial Black, Arial`;
+                
+                // Add proper fallbacks for different font families
+                let fontStack = fontFamily;
+                if (fontFamily === 'SF Pro Display') {
+                    fontStack = '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial';
+                } else if (fontFamily !== 'Arial' && fontFamily !== 'Helvetica' && fontFamily !== 'Times New Roman' && fontFamily !== 'Georgia') {
+                    fontStack = `"${fontFamily}", Arial, sans-serif`;
+                }
+                
+                ctx.font = `${fontWeight} ${field.fontSize}px ${fontStack}`;
                 ctx.fillStyle = field.color;
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'top';
