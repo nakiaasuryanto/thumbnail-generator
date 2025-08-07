@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Thumbnail Generator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Montserrat:wght@400;700;900&family=Inter:wght@400;700;900&family=Roboto:wght@400;700;900&family=Open+Sans:wght@400;700&family=Lato:wght@400;700;900&family=Source+Sans+Pro:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Montserrat:wght@400;700;900&family=Inter:wght@400;700;900&family=Roboto:wght@400;700;900&family=Open+Sans:wght@400;700&family=Lato:wght@400;700;900&family=Source+Sans+Pro:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700;900&family=Nunito:wght@400;700;900&family=Jost:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .canvas-container {
@@ -116,6 +116,7 @@
                                     <select id="fieldFont" class="w-full px-3 py-2 border rounded-md">
                                         <option value="Poppins">Poppins</option>
                                         <option value="SF Pro Display">SF Pro Display</option>
+                                        <option value="Jost">Jost</option>
                                         <option value="Montserrat">Montserrat</option>
                                         <option value="Inter">Inter</option>
                                         <option value="Roboto">Roboto</option>
@@ -137,6 +138,17 @@
                                         <option value="400">Regular (400)</option>
                                         <option value="700" selected>Bold (700)</option>
                                         <option value="900">Black (900)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Line Height:</label>
+                                    <select id="fieldLineHeight" class="w-full px-3 py-2 border rounded-md">
+                                        <option value="1.0">Tight (1.0)</option>
+                                        <option value="1.1">Snug (1.1)</option>
+                                        <option value="1.2" selected>Normal (1.2)</option>
+                                        <option value="1.3">Relaxed (1.3)</option>
+                                        <option value="1.4">Loose (1.4)</option>
+                                        <option value="1.5">Extra Loose (1.5)</option>
                                     </select>
                                 </div>
                                 <div>
@@ -337,12 +349,13 @@
                 const text = field.text || field.label;
                 
                 // Calculate text height for vertical centering
-                const lineHeight = field.fontSize * 1.2;
+                const lineHeightMultiplier = field.lineHeight || 1.2;
+                const lineHeight = field.fontSize * lineHeightMultiplier;
                 const lines = getTextLines(text, maxWidth, ctx);
                 const totalTextHeight = lines.length * lineHeight;
                 const textY = field.y + (field.height - totalTextHeight) / 2;
                 
-                wrapText(text, textX, textY, maxWidth, field.fontSize, field.hasOutline, field.outlineColor, field.outlineWidth);
+                wrapText(text, textX, textY, maxWidth, field.fontSize, lineHeightMultiplier, field.hasOutline, field.outlineColor, field.outlineWidth);
                 
                 if (currentMode === 'admin' && selectedTextField === field) {
                     ctx.strokeStyle = '#4f46e5';
@@ -428,8 +441,8 @@
             return lines;
         }
 
-        function wrapText(text, x, y, maxWidth, fontSize, hasOutline, outlineColor, outlineWidth) {
-            const lineHeight = fontSize * 1.2;
+        function wrapText(text, x, y, maxWidth, fontSize, lineHeightMultiplier, hasOutline, outlineColor, outlineWidth) {
+            const lineHeight = fontSize * (lineHeightMultiplier || 1.2);
             const lines = getTextLines(text, maxWidth, ctx);
             let currentY = y;
             
@@ -606,6 +619,7 @@
                 color: '#ffffff',
                 fontFamily: 'Poppins',
                 fontWeight: '700',
+                lineHeight: 1.2,
                 hasOutline: false,
                 outlineColor: '#000000',
                 outlineWidth: 2
@@ -627,6 +641,7 @@
             document.getElementById('fieldHeight').value = selectedTextField.height;
             document.getElementById('fieldFont').value = selectedTextField.fontFamily || 'Poppins';
             document.getElementById('fieldWeight').value = selectedTextField.fontWeight || '700';
+            document.getElementById('fieldLineHeight').value = selectedTextField.lineHeight || 1.2;
             document.getElementById('fieldColor').value = selectedTextField.color;
             document.getElementById('fieldOutline').checked = selectedTextField.hasOutline || false;
             document.getElementById('fieldOutlineColor').value = selectedTextField.outlineColor || '#000000';
@@ -654,6 +669,7 @@
             selectedTextField.height = parseInt(document.getElementById('fieldHeight').value);
             selectedTextField.fontFamily = document.getElementById('fieldFont').value;
             selectedTextField.fontWeight = document.getElementById('fieldWeight').value;
+            selectedTextField.lineHeight = parseFloat(document.getElementById('fieldLineHeight').value);
             selectedTextField.color = document.getElementById('fieldColor').value;
             selectedTextField.hasOutline = document.getElementById('fieldOutline').checked;
             selectedTextField.outlineColor = document.getElementById('fieldOutlineColor').value;
@@ -714,6 +730,7 @@
                         color: field.color,
                         fontFamily: field.fontFamily || 'Poppins',
                         fontWeight: field.fontWeight || '700',
+                        lineHeight: field.lineHeight || 1.2,
                         hasOutline: field.hasOutline || false,
                         outlineColor: field.outlineColor || '#000000',
                         outlineWidth: field.outlineWidth || 2
@@ -919,6 +936,7 @@
                     color: fieldConfig.color,
                     fontFamily: fieldConfig.fontFamily || 'Poppins',
                     fontWeight: fieldConfig.fontWeight || '700',
+                    lineHeight: fieldConfig.lineHeight || 1.2,
                     hasOutline: fieldConfig.hasOutline || false,
                     outlineColor: fieldConfig.outlineColor || '#000000',
                     outlineWidth: fieldConfig.outlineWidth || 2
@@ -1040,6 +1058,7 @@
             document.getElementById('fieldHeight').addEventListener('input', updateSelectedTextField);
             document.getElementById('fieldFont').addEventListener('change', updateSelectedTextField);
             document.getElementById('fieldWeight').addEventListener('change', updateSelectedTextField);
+            document.getElementById('fieldLineHeight').addEventListener('change', updateSelectedTextField);
             document.getElementById('fieldColor').addEventListener('input', updateSelectedTextField);
             document.getElementById('fieldOutline').addEventListener('change', updateSelectedTextField);
             document.getElementById('fieldOutlineColor').addEventListener('input', updateSelectedTextField);
