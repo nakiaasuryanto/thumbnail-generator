@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Photo Frame Generator</title>
+    <title>Simple Thumbnail Generator</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .canvas-container {
+            border: 2px solid #e5e7eb;
             border-radius: 8px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             display: inline-block;
@@ -35,8 +36,8 @@
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen py-8">
     <div class="container mx-auto px-4 max-w-7xl">
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">Simple Photo Frame Generator</h1>
-            <p class="text-gray-600">Create templates or use them to generate custom frames</p>
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🚀 Simple Thumbnail Generator</h1>
+            <p class="text-gray-600">NO DATABASE - Just works!</p>
         </div>
         
         <!-- Mode Switcher -->
@@ -73,8 +74,8 @@
                         
                         <!-- Frame Upload -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Frame (PNG)</label>
-                            <input type="file" id="frameUpload" accept="image/png" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Frame</label>
+                            <input type="file" id="frameUpload" accept="image/*" class="hidden">
                             <button onclick="document.getElementById('frameUpload').click()" 
                                     class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
                                 🖼️ Choose Frame
@@ -125,7 +126,7 @@
                             <input type="text" id="templateName" placeholder="Template name..." class="w-full px-3 py-2 border rounded-md mb-2">
                             <button id="saveTemplateBtn" 
                                     class="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
-                                💾 Save Template
+                                💾 Save Template (Browser)
                             </button>
                         </div>
                     </div>
@@ -149,21 +150,21 @@
                                 </button>
                             </div>
                             <button id="clearAllTemplatesBtn" class="w-full mt-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">
-                                🗑️ Clear All Templates
+                                🗑️ Clear All
                             </button>
                         </div>
                         
                         <!-- Photo Upload -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Upload Photo:</label>
+                            <input type="file" id="photoUpload" accept="image/*" class="hidden">
                             <div class="grid grid-cols-2 gap-2">
-                                <input type="file" id="photoUpload" accept="image/*" class="hidden">
                                 <button onclick="document.getElementById('photoUpload').click()" 
-                                        class="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-                                    📸 Choose Photo
+                                        class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                    📸 Choose
                                 </button>
-                                <button id="deletePhotoBtn" class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-                                    🗑️ Delete Photo
+                                <button id="deletePhotoBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    🗑️ Delete
                                 </button>
                             </div>
                         </div>
@@ -191,7 +192,7 @@
         let canvas, ctx;
         let currentMode = 'admin';
         let currentTemplate = null;
-        let canvasWidth = 1080, canvasHeight = 1080; // Default canvas size
+        let canvasWidth = 1080, canvasHeight = 1080;
         
         // Canvas objects
         let frameImage = null;
@@ -199,16 +200,12 @@
         let textFields = [];
         let selectedTextField = null;
         
-        // Mouse handling for admin text fields
+        // Mouse handling
         let isDragging = false;
         let isResizing = false;
-        let dragStartX, dragStartY;
-
-        // Mouse handling for user photo
         let isDraggingPhoto = false;
         let isResizingPhoto = false;
-        let dragStartPhotoX, dragStartPhotoY;
-        let dragStartPhotoWidth, dragStartPhotoHeight;
+        let dragStartX, dragStartY;
 
         // Initialize
         function init() {
@@ -226,7 +223,6 @@
             
             if ('fonts' in document) {
                 document.fonts.ready.then(() => {
-                    console.log('Fonts loaded');
                     redraw();
                 });
             }
@@ -236,99 +232,95 @@
 
         function clearCanvas() {
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function wrapText(context, text, maxWidth) {
-            if (!text) return [];
-            const words = text.split(' ');
-            const lines = [];
-            let currentLine = words[0] || '';
-
-            for (let i = 1; i < words.length; i++) {
-                const word = words[i];
-                const width = context.measureText(currentLine + " " + word).width;
-                if (width < maxWidth) {
-                    currentLine += " " + word;
-                } else {
-                    lines.push(currentLine);
-                    currentLine = word;
-                }
-            }
-            lines.push(currentLine);
-            return lines;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
 
         function redraw() {
-            ctx.save();
             clearCanvas();
             
-            // Draw user photo (back layer)
+            // Draw user photo
             if (userPhoto) {
                 ctx.drawImage(userPhoto.img, userPhoto.x, userPhoto.y, userPhoto.width, userPhoto.height);
                 
-                // Draw selection border and handle in user mode (but not for download)
-                if (currentMode === 'user') {
+                if (currentMode === 'user' && userPhoto.selected) {
                     ctx.strokeStyle = '#4f46e5';
-                    ctx.lineWidth = 4; // Thicker for visibility on high-res canvas
+                    ctx.lineWidth = 3;
                     ctx.strokeRect(userPhoto.x, userPhoto.y, userPhoto.width, userPhoto.height);
-
-                    const handleSize = 20; // Bigger handle
+                    
+                    const handleSize = 12;
                     ctx.fillStyle = '#4f46e5';
-                    ctx.fillRect(userPhoto.x + userPhoto.width - handleSize / 2, userPhoto.y + userPhoto.height - handleSize / 2, handleSize, handleSize);
+                    ctx.fillRect(userPhoto.x + userPhoto.width - handleSize/2, userPhoto.y + userPhoto.height - handleSize/2, handleSize, handleSize);
                 }
             }
             
-            // Draw frame (middle layer)
+            // Draw frame
             if (frameImage) {
                 ctx.drawImage(frameImage, 0, 0, canvasWidth, canvasHeight);
             }
             
-            // Draw text fields (front layer)
+            // Draw text fields
             textFields.forEach(field => {
                 if (currentMode === 'admin') {
                     ctx.fillStyle = 'rgba(0, 100, 255, 0.1)';
                     ctx.fillRect(field.x, field.y, field.width, field.height);
+                    
                     ctx.strokeStyle = '#4f46e5';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([6, 6]);
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
                     ctx.strokeRect(field.x, field.y, field.width, field.height);
                     ctx.setLineDash([]);
                 }
+                
+                const textX = field.x + 10;
+                const textY = field.y + (field.height / 2) - (field.fontSize / 2);
                 
                 ctx.font = `bold ${field.fontSize}px Poppins, Arial Black, Arial`;
                 ctx.fillStyle = field.color;
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'top';
-
-                const textToDraw = field.text || field.label;
-                const lines = wrapText(ctx, textToDraw, field.width - 20);
-                const lineHeight = field.fontSize * 1.2;
-                const textHeight = lines.length * lineHeight;
-                let y = field.y + (field.height - textHeight) / 2;
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.rect(field.x, field.y, field.width, field.height);
-                ctx.clip();
-
-                for (const line of lines) {
-                    ctx.fillText(line, field.x + 10, y);
-                    y += lineHeight;
-                }
-                ctx.restore();
+                
+                const maxWidth = field.width - 20;
+                wrapText(field.text || field.label, textX, textY, maxWidth, field.fontSize);
                 
                 if (currentMode === 'admin' && selectedTextField === field) {
                     ctx.strokeStyle = '#4f46e5';
-                    ctx.lineWidth = 6;
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([]);
                     ctx.strokeRect(field.x, field.y, field.width, field.height);
                     
-                    const handleSize = 16;
+                    const handleSize = 8;
                     ctx.fillStyle = '#4f46e5';
                     ctx.fillRect(field.x + field.width - handleSize/2, field.y + field.height - handleSize/2, handleSize, handleSize);
                 }
             });
-            ctx.restore();
+        }
+
+        function wrapText(text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let currentY = y;
+            
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 2;
+                    ctx.strokeText(line, x, currentY);
+                    ctx.fillText(line, x, currentY);
+                    line = words[n] + ' ';
+                    currentY += lineHeight * 1.2;
+                } else {
+                    line = testLine;
+                }
+            }
+            
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeText(line, x, currentY);
+            ctx.fillText(line, x, currentY);
         }
 
         // Mouse handling
@@ -338,10 +330,36 @@
             const scaleY = canvas.height / rect.height;
             const mouseX = (e.clientX - rect.left) * scaleX;
             const mouseY = (e.clientY - rect.top) * scaleY;
-
+            
+            if (currentMode === 'user' && userPhoto) {
+                const handleSize = 12;
+                if (mouseX >= userPhoto.x + userPhoto.width - handleSize && mouseX <= userPhoto.x + userPhoto.width + handleSize &&
+                    mouseY >= userPhoto.y + userPhoto.height - handleSize && mouseY <= userPhoto.y + userPhoto.height + handleSize) {
+                    isResizingPhoto = true;
+                    userPhoto.selected = true;
+                    dragStartX = mouseX;
+                    dragStartY = mouseY;
+                    canvas.style.cursor = 'se-resize';
+                    return;
+                }
+                
+                if (mouseX >= userPhoto.x && mouseX <= userPhoto.x + userPhoto.width && 
+                    mouseY >= userPhoto.y && mouseY <= userPhoto.y + userPhoto.height) {
+                    isDraggingPhoto = true;
+                    userPhoto.selected = true;
+                    dragStartX = mouseX - userPhoto.x;
+                    dragStartY = mouseY - userPhoto.y;
+                    canvas.style.cursor = 'move';
+                    redraw();
+                    return;
+                } else {
+                    userPhoto.selected = false;
+                }
+            }
+            
             if (currentMode === 'admin') {
                 for (let field of textFields) {
-                    const handleSize = 16;
+                    const handleSize = 8;
                     if (mouseX >= field.x + field.width - handleSize && mouseX <= field.x + field.width + handleSize &&
                         mouseY >= field.y + field.height - handleSize && mouseY <= field.y + field.height + handleSize) {
                         selectedTextField = field;
@@ -366,30 +384,11 @@
                         return;
                     }
                 }
+                
                 selectedTextField = null;
                 hideTextFieldProperties();
                 canvas.style.cursor = 'crosshair';
                 redraw();
-
-            } else if (currentMode === 'user' && userPhoto) {
-                const handleSize = 20;
-                if (mouseX >= userPhoto.x + userPhoto.width - handleSize / 2 && mouseX <= userPhoto.x + userPhoto.width + handleSize / 2 &&
-                    mouseY >= userPhoto.y + userPhoto.height - handleSize / 2 && mouseY <= userPhoto.y + userPhoto.height + handleSize / 2) {
-                    isResizingPhoto = true;
-                    dragStartX = mouseX;
-                    dragStartPhotoWidth = userPhoto.width;
-                    canvas.style.cursor = 'se-resize';
-                    return;
-                }
-
-                if (mouseX >= userPhoto.x && mouseX <= userPhoto.x + userPhoto.width &&
-                    mouseY >= userPhoto.y && mouseY <= userPhoto.y + userPhoto.height) {
-                    isDraggingPhoto = true;
-                    dragStartPhotoX = mouseX - userPhoto.x;
-                    dragStartPhotoY = mouseY - userPhoto.y;
-                    canvas.style.cursor = 'move';
-                    return;
-                }
             }
         }
 
@@ -400,68 +399,50 @@
             const mouseX = (e.clientX - rect.left) * scaleX;
             const mouseY = (e.clientY - rect.top) * scaleY;
             
-            if (currentMode === 'admin') {
-                if (isDragging && selectedTextField) {
-                    selectedTextField.x = mouseX - dragStartX;
-                    selectedTextField.y = mouseY - dragStartY;
-                    redraw();
-                } else if (isResizing && selectedTextField) {
-                    const newWidth = Math.max(50, mouseX - selectedTextField.x);
-                    const newHeight = Math.max(30, mouseY - selectedTextField.y);
-                    selectedTextField.width = newWidth;
-                    selectedTextField.height = newHeight;
-                    document.getElementById('fieldWidth').value = newWidth;
-                    document.getElementById('fieldHeight').value = newHeight;
-                    redraw();
-                } else {
-                    let cursor = 'crosshair';
-                    for (let field of textFields) {
-                        const handleSize = 16;
-                        if (mouseX >= field.x + field.width - handleSize && mouseX <= field.x + field.width + handleSize &&
-                            mouseY >= field.y + field.height - handleSize && mouseY <= field.y + field.height + handleSize) {
-                            cursor = 'se-resize'; break;
-                        }
-                        if (mouseX >= field.x && mouseX <= field.x + field.width && 
-                            mouseY >= field.y && mouseY <= field.y + field.height) {
-                            cursor = 'move'; break;
-                        }
-                    }
-                    canvas.style.cursor = cursor;
-                }
-            } else if (currentMode === 'user' && userPhoto) {
-                if (isDraggingPhoto) {
-                    userPhoto.x = mouseX - dragStartPhotoX;
-                    userPhoto.y = mouseY - dragStartPhotoY;
-                    redraw();
-                } else if (isResizingPhoto) {
-                    const dx = mouseX - dragStartX;
-                    const newWidth = Math.max(50, dragStartPhotoWidth + dx);
-                    const aspectRatio = userPhoto.img.height / userPhoto.img.width;
+            if (isDraggingPhoto && userPhoto) {
+                userPhoto.x = mouseX - dragStartX;
+                userPhoto.y = mouseY - dragStartY;
+                redraw();
+            } else if (isResizingPhoto && userPhoto) {
+                const newWidth = Math.max(50, mouseX - userPhoto.x);
+                const newHeight = Math.max(50, mouseY - userPhoto.y);
+                const aspectRatio = userPhoto.img.width / userPhoto.img.height;
+                
+                if (newWidth / aspectRatio <= newHeight) {
                     userPhoto.width = newWidth;
-                    userPhoto.height = newWidth * aspectRatio;
-                    redraw();
+                    userPhoto.height = newWidth / aspectRatio;
                 } else {
-                    let cursor = 'default';
-                    const handleSize = 20;
-                    if (mouseX >= userPhoto.x + userPhoto.width - handleSize / 2 && mouseX <= userPhoto.x + userPhoto.width + handleSize / 2 &&
-                        mouseY >= userPhoto.y + userPhoto.height - handleSize / 2 && mouseY <= userPhoto.y + userPhoto.height + handleSize / 2) {
-                        cursor = 'se-resize';
-                    } else if (mouseX >= userPhoto.x && mouseX <= userPhoto.x + userPhoto.width &&
-                               mouseY >= userPhoto.y && mouseY <= userPhoto.y + userPhoto.height) {
-                        cursor = 'move';
-                    }
-                    canvas.style.cursor = cursor;
+                    userPhoto.height = newHeight;
+                    userPhoto.width = newHeight * aspectRatio;
                 }
+                
+                redraw();
+            } else if (isDragging && selectedTextField) {
+                selectedTextField.x = mouseX - dragStartX;
+                selectedTextField.y = mouseY - dragStartY;
+                redraw();
+            } else if (isResizing && selectedTextField) {
+                const newWidth = Math.max(50, mouseX - selectedTextField.x);
+                const newHeight = Math.max(30, mouseY - selectedTextField.y);
+                selectedTextField.width = newWidth;
+                selectedTextField.height = newHeight;
+                
+                document.getElementById('fieldWidth').value = newWidth;
+                document.getElementById('fieldHeight').value = newHeight;
+                
+                redraw();
             }
         }
 
         function handleMouseUp(e) {
-            isDragging = isResizing = isDraggingPhoto = isResizingPhoto = false;
-            if (currentMode === 'admin') canvas.style.cursor = 'crosshair';
-            else canvas.style.cursor = 'default';
+            isDragging = false;
+            isResizing = false;
+            isDraggingPhoto = false;
+            isResizingPhoto = false;
+            canvas.style.cursor = 'crosshair';
         }
 
-        // Admin mode functions
+        // Admin functions
         function handleFrameUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -471,13 +452,11 @@
                 const img = new Image();
                 img.onload = function() {
                     frameImage = img;
-                    // Set canvas dimensions to match the frame
                     canvasWidth = img.width;
                     canvasHeight = img.height;
                     canvas.width = canvasWidth;
                     canvas.height = canvasHeight;
-
-                    resizeCanvas(); // Adjust display size
+                    resizeCanvas();
                     redraw();
                     document.getElementById('frameStatus').textContent = `Frame loaded: ${file.name} (${img.width}x${img.height})`;
                 };
@@ -493,9 +472,9 @@
                 text: 'Sample Text',
                 x: 100,
                 y: 100,
-                width: 400, // Larger default size
-                height: 100,
-                fontSize: 72, // Larger default font
+                width: 200,
+                height: 50,
+                fontSize: 36,
                 color: '#ffffff'
             };
             
@@ -541,14 +520,16 @@
             redraw();
         }
 
-        async function saveTemplate() {
+        // localStorage functions (NO DATABASE!)
+        function saveTemplate() {
             const templateName = document.getElementById('templateName').value.trim();
             if (!templateName) {
-                alert('Please enter a template name');
+                alert('❌ Please enter a template name');
                 return;
             }
+            
             if (!frameImage) {
-                alert('Please upload a frame first');
+                alert('❌ Please upload a frame first');
                 return;
             }
             
@@ -566,98 +547,135 @@
                         height: field.height,
                         fontSize: field.fontSize,
                         color: field.color
-                    }))
+                    })),
+                    createdAt: new Date().toISOString()
                 };
                 
-                console.log("Sending template:", template);
-
-                const response = await fetch('/api/templates', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(template)
-                });
-
-                const result = await response.json();
-                console.log("Server response:", result);
-
-                if (response.ok) {
-                    alert('Template saved successfully!');
-                    document.getElementById('templateName').value = '';
-                } else {
-                    alert(`Error saving template: ${result.error}`);
-                }
+                const savedTemplates = JSON.parse(localStorage.getItem('thumbnailTemplates') || '{}');
+                savedTemplates[templateName] = template;
+                localStorage.setItem('thumbnailTemplates', JSON.stringify(savedTemplates));
+                
+                alert('✅ Template saved to browser!');
+                document.getElementById('templateName').value = '';
                 
             } catch (error) {
-                console.error('Error saving template:', error);
-                alert('Error saving template: ' + error.message);
+                console.error('Save error:', error);
+                alert('❌ Error saving template: ' + error.message);
             }
         }
 
-        // User mode functions
-        async function loadTemplatesList() {
-            const select = document.getElementById('templateSelect');
-            select.innerHTML = '<option value="">-- Select Template --</option>';
-            
+        function loadTemplatesList() {
             try {
-                const response = await fetch('/api/templates');
-                const result = await response.json();
-
-                if (response.ok) {
-                    result.data.forEach(template => {
-                        const option = document.createElement('option');
-                        option.value = template.name;
-                        option.textContent = template.name;
-                        select.appendChild(option);
-                    });
-                } else {
-                    console.error('Error loading templates:', result.error);
-                }
+                const select = document.getElementById('templateSelect');
+                select.innerHTML = '<option value="">-- Select Template --</option>';
+                
+                const savedTemplates = JSON.parse(localStorage.getItem('thumbnailTemplates') || '{}');
+                
+                Object.keys(savedTemplates).forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    select.appendChild(option);
+                });
+                
             } catch (error) {
-                console.error('Error fetching templates:', error);
+                console.error('Load list error:', error);
+                document.getElementById('templateSelect').innerHTML = '<option value="">-- Error loading templates --</option>';
             }
         }
 
-        async function loadTemplate() {
+        function loadTemplate() {
             const templateName = document.getElementById('templateSelect').value;
             if (!templateName) return;
             
             try {
-                const response = await fetch(`/api/templates?name=${encodeURIComponent(templateName)}`);
-                const result = await response.json();
-
-                if (response.ok && result.data.length > 0) {
-                    currentTemplate = result.data[0];
-
-                    // Set canvas size from template
+                const savedTemplates = JSON.parse(localStorage.getItem('thumbnailTemplates') || '{}');
+                currentTemplate = savedTemplates[templateName];
+                
+                if (!currentTemplate) {
+                    alert('❌ Template not found!');
+                    return;
+                }
+                
+                // Load frame
+                const img = new Image();
+                img.onload = function() {
+                    frameImage = img;
                     canvasWidth = currentTemplate.canvasWidth;
                     canvasHeight = currentTemplate.canvasHeight;
                     canvas.width = canvasWidth;
                     canvas.height = canvasHeight;
-                    
-                    const img = new Image();
-                    img.onload = function() {
-                        frameImage = img;
-                        resizeCanvas(); // Adjust display size
-                        redraw();
-                    };
-                    img.src = currentTemplate.frame;
-                    
-                    textFields = currentTemplate.textFields.map((fieldConfig, index) => ({
-                        ...fieldConfig,
-                        id: 'user_' + index,
-                        text: '' // Start with empty text
-                    }));
-
-                    createUserInputFields();
+                    resizeCanvas();
                     redraw();
-                } else {
-                    alert(`Error loading template: ${result.error || 'Template not found'}`);
-                }
+                };
+                img.src = currentTemplate.frame;
+                
+                // Create input fields
+                createUserInputFields();
+                alert('✅ Template loaded!');
+                
             } catch (error) {
-                console.error('Error fetching template:', error);
-                alert('Error fetching template: ' + error.message);
+                console.error('Load error:', error);
+                alert('❌ Error loading template: ' + error.message);
+            }
+        }
+
+        function deleteTemplate() {
+            const templateName = document.getElementById('templateSelect').value;
+            if (!templateName) {
+                alert('❌ Please select a template to delete');
+                return;
+            }
+            
+            if (!confirm(`🗑️ Delete "${templateName}"?`)) {
+                return;
+            }
+            
+            try {
+                const savedTemplates = JSON.parse(localStorage.getItem('thumbnailTemplates') || '{}');
+                delete savedTemplates[templateName];
+                localStorage.setItem('thumbnailTemplates', JSON.stringify(savedTemplates));
+                
+                loadTemplatesList();
+                
+                if (currentTemplate && currentTemplate.name === templateName) {
+                    currentTemplate = null;
+                    frameImage = null;
+                    textFields = [];
+                    userPhoto = null;
+                    document.getElementById('userTextInputs').innerHTML = '';
+                    redraw();
+                }
+                
+                alert('✅ Template deleted!');
+                
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('❌ Error deleting template: ' + error.message);
+            }
+        }
+
+        function clearAllTemplates() {
+            if (!confirm('🗑️ Delete ALL templates?')) {
+                return;
+            }
+            
+            try {
+                localStorage.removeItem('thumbnailTemplates');
+                loadTemplatesList();
+                
+                currentTemplate = null;
+                frameImage = null;
+                textFields = [];
+                userPhoto = null;
+                document.getElementById('userTextInputs').innerHTML = '';
+                redraw();
+                
+                alert('✅ All templates cleared!');
+                
+            } catch (error) {
+                console.error('Clear error:', error);
+                alert('❌ Error clearing templates: ' + error.message);
             }
         }
 
@@ -686,91 +704,27 @@
         function updateUserText(e) {
             const fieldIndex = parseInt(e.target.dataset.fieldIndex);
             const text = e.target.value;
-            if(textFields[fieldIndex]) {
-                textFields[fieldIndex].text = text;
+            const fieldConfig = currentTemplate.textFields[fieldIndex];
+            
+            let textField = textFields[fieldIndex];
+            if (!textField) {
+                textField = {
+                    id: 'user_' + fieldIndex,
+                    label: fieldConfig.label,
+                    text: text,
+                    x: fieldConfig.x,
+                    y: fieldConfig.y,
+                    width: fieldConfig.width,
+                    height: fieldConfig.height,
+                    fontSize: fieldConfig.fontSize,
+                    color: fieldConfig.color
+                };
+                textFields[fieldIndex] = textField;
+            } else {
+                textField.text = text;
             }
+            
             redraw();
-        }
-
-        async function deleteTemplate() {
-            const templateName = document.getElementById('templateSelect').value;
-            if (!templateName) {
-                alert('Please select a template to delete');
-                return;
-            }
-            
-            if (!confirm(`Are you sure you want to delete template "${templateName}"?`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/templates/${encodeURIComponent(templateName)}`, {
-                    method: 'DELETE'
-                });
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert('Template deleted successfully!');
-                    // Refresh template list
-                    loadTemplatesList();
-                    
-                    // Clear current template if it was the deleted one
-                    if (currentTemplate && currentTemplate.name === templateName) {
-                        currentTemplate = null; frameImage = null; textFields = []; userPhoto = null;
-                        document.getElementById('userTextInputs').innerHTML = '';
-                        redraw();
-                    }
-                } else {
-                    alert(`Error deleting template: ${result.error}`);
-                }
-            } catch (error) {
-                console.error('Error deleting template:', error);
-                alert('Error deleting template: ' + error.message);
-            }
-        }
-
-        async function clearAllTemplates() {
-            try {
-                const response = await fetch('/api/templates');
-                const result = await response.json();
-
-                if (!response.ok) {
-                    alert(`Error fetching templates to clear: ${result.error}`);
-                    return;
-                }
-
-                const savedTemplates = result.data;
-                const templateCount = savedTemplates.length;
-            
-                if (templateCount === 0) {
-                    alert('No templates to clear!');
-                    return;
-                }
-                
-                if (!confirm(`Are you sure you want to delete ALL ${templateCount} templates? This cannot be undone!`)) {
-                    return;
-                }
-
-                for (const template of savedTemplates) {
-                    await fetch(`/api/templates/${encodeURIComponent(template.name)}`, {
-                        method: 'DELETE'
-                    });
-                }
-                
-                // Refresh template list
-                loadTemplatesList();
-                
-                // Clear current template
-                currentTemplate = null; frameImage = null; textFields = []; userPhoto = null;
-                document.getElementById('userTextInputs').innerHTML = '';
-                redraw();
-                
-                alert(`All ${templateCount} templates have been deleted!`);
-
-            } catch (error) {
-                console.error('Error clearing all templates:', error);
-                alert('Error clearing all templates: ' + error.message);
-            }
         }
 
         function handlePhotoUpload(e) {
@@ -790,7 +744,8 @@
                         x: (canvasWidth - scaledWidth) / 2,
                         y: (canvasHeight - scaledHeight) / 2,
                         width: scaledWidth,
-                        height: scaledHeight
+                        height: scaledHeight,
+                        selected: false
                     };
                     
                     redraw();
@@ -801,38 +756,32 @@
         }
 
         function deletePhoto() {
-            if (userPhoto) {
-                userPhoto = null;
-                redraw();
-            }
+            userPhoto = null;
+            redraw();
         }
 
         function downloadImage() {
-            const originalMode = currentMode;
-            currentMode = 'download'; // Set a temporary mode to prevent drawing handles
+            const wasSelected = userPhoto && userPhoto.selected;
+            if (userPhoto) userPhoto.selected = false;
+            
             redraw();
-
+            
             const link = document.createElement('a');
-            let filename = 'thumbnail.png';
-
-            // Try to get the text from the first user input field
             const firstTextInput = document.querySelector('.user-text-input');
-            if (firstTextInput && firstTextInput.value) {
-                // Sanitize the text for use as a filename
-                filename = firstTextInput.value.replace(/[^a-z0-9_.-]/gi, '_') + '.png';
-            }
-
+            const filename = firstTextInput && firstTextInput.value.trim() 
+                ? `${firstTextInput.value.trim()}.png` 
+                : 'thumbnail.png';
+            
             link.download = filename;
             link.href = canvas.toDataURL('image/png', 1.0);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
-            currentMode = originalMode; // Restore the mode
-            redraw(); // Redraw again with handles if needed
+            
+            if (wasSelected && userPhoto) userPhoto.selected = true;
+            redraw();
         }
 
-        // Mode switching
         function switchMode(mode) {
             currentMode = mode;
             
@@ -841,17 +790,14 @@
             document.getElementById('adminControls').classList.toggle('hidden', mode !== 'admin');
             document.getElementById('userControls').classList.toggle('hidden', mode !== 'user');
             
-            // Reset canvas state on mode switch
-            userPhoto = null;
-            textFields = [];
-            selectedTextField = null;
-            hideTextFieldProperties();
-
-            if (mode === 'user') {
-                loadTemplatesList();
+            if (mode === 'admin') {
+                selectedTextField = null;
+                hideTextFieldProperties();
+                if (userPhoto) userPhoto.selected = false;
             } else {
-                 // Clear user-specific things
-                document.getElementById('userTextInputs').innerHTML = '';
+                loadTemplatesList();
+                textFields = [];
+                userPhoto = null;
             }
             
             redraw();
@@ -862,7 +808,9 @@
             const containerWidth = container.clientWidth - 4;
             const containerHeight = window.innerHeight * 0.8;
             
-            const scale = Math.min(containerWidth / canvasWidth, containerHeight / canvasHeight, 1);
+            const scaleX = containerWidth / canvasWidth;
+            const scaleY = containerHeight / canvasHeight;
+            const scale = Math.min(scaleX, scaleY, 1);
             
             canvas.style.width = (canvasWidth * scale) + 'px';
             canvas.style.height = (canvasHeight * scale) + 'px';
@@ -881,6 +829,7 @@
             document.getElementById('saveTemplateBtn').onclick = saveTemplate;
             document.getElementById('deleteFieldBtn').onclick = deleteSelectedTextField;
             
+            // Properties
             document.getElementById('fieldLabel').addEventListener('input', updateSelectedTextField);
             document.getElementById('fieldFontSize').addEventListener('input', updateSelectedTextField);
             document.getElementById('fieldWidth').addEventListener('input', updateSelectedTextField);
