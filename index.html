@@ -317,8 +317,6 @@
                 }
                 
                 const textX = field.x + 10;
-                const textY = field.y + (field.height / 2) - (field.fontSize / 2);
-                
                 const fontWeight = field.fontWeight || '700';
                 const fontFamily = field.fontFamily || 'Poppins';
                 
@@ -336,7 +334,15 @@
                 ctx.textBaseline = 'top';
                 
                 const maxWidth = field.width - 20;
-                wrapText(field.text || field.label, textX, textY, maxWidth, field.fontSize, field.hasOutline, field.outlineColor, field.outlineWidth);
+                const text = field.text || field.label;
+                
+                // Calculate text height for vertical centering
+                const lineHeight = field.fontSize * 1.2;
+                const lines = getTextLines(text, maxWidth, ctx);
+                const totalTextHeight = lines.length * lineHeight;
+                const textY = field.y + (field.height - totalTextHeight) / 2;
+                
+                wrapText(text, textX, textY, maxWidth, field.fontSize, field.hasOutline, field.outlineColor, field.outlineWidth);
                 
                 if (currentMode === 'admin' && selectedTextField === field) {
                     ctx.strokeStyle = '#4f46e5';
@@ -351,7 +357,33 @@
             });
         }
 
-        function wrapText(text, x, y, maxWidth, lineHeight, hasOutline, outlineColor, outlineWidth) {
+        function getTextLines(text, maxWidth, context) {
+            const words = text.split(' ');
+            const lines = [];
+            let line = '';
+            
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                
+                if (testWidth > maxWidth && n > 0) {
+                    lines.push(line.trim());
+                    line = words[n] + ' ';
+                } else {
+                    line = testLine;
+                }
+            }
+            
+            if (line.trim()) {
+                lines.push(line.trim());
+            }
+            
+            return lines;
+        }
+
+        function wrapText(text, x, y, maxWidth, fontSize, hasOutline, outlineColor, outlineWidth) {
+            const lineHeight = fontSize * 1.2;
             const words = text.split(' ');
             let line = '';
             let currentY = y;
@@ -362,25 +394,31 @@
                 const testWidth = metrics.width;
                 
                 if (testWidth > maxWidth && n > 0) {
+                    // Render the current line
                     if (hasOutline) {
                         ctx.strokeStyle = outlineColor || '#000000';
                         ctx.lineWidth = outlineWidth || 2;
-                        ctx.strokeText(line, x, currentY);
+                        ctx.strokeText(line.trim(), x, currentY);
                     }
-                    ctx.fillText(line, x, currentY);
+                    ctx.fillText(line.trim(), x, currentY);
+                    
+                    // Start new line
                     line = words[n] + ' ';
-                    currentY += lineHeight * 1.2;
+                    currentY += lineHeight;
                 } else {
                     line = testLine;
                 }
             }
             
-            if (hasOutline) {
-                ctx.strokeStyle = outlineColor || '#000000';
-                ctx.lineWidth = outlineWidth || 2;
-                ctx.strokeText(line, x, currentY);
+            // Render the final line
+            if (line.trim()) {
+                if (hasOutline) {
+                    ctx.strokeStyle = outlineColor || '#000000';
+                    ctx.lineWidth = outlineWidth || 2;
+                    ctx.strokeText(line.trim(), x, currentY);
+                }
+                ctx.fillText(line.trim(), x, currentY);
             }
-            ctx.fillText(line, x, currentY);
         }
 
         // Mouse handling
