@@ -357,19 +357,65 @@
             });
         }
 
+        function breakLongWord(word, maxWidth, context) {
+            if (context.measureText(word).width <= maxWidth) {
+                return [word];
+            }
+            
+            const parts = [];
+            let currentPart = '';
+            
+            for (let i = 0; i < word.length; i++) {
+                const testPart = currentPart + word[i];
+                const testWidth = context.measureText(testPart + '-').width;
+                
+                if (testWidth > maxWidth && currentPart.length > 0) {
+                    parts.push(currentPart + '-');
+                    currentPart = word[i];
+                } else {
+                    currentPart = testPart;
+                }
+            }
+            
+            if (currentPart) {
+                parts.push(currentPart);
+            }
+            
+            return parts;
+        }
+
         function getTextLines(text, maxWidth, context) {
             const words = text.split(' ');
             const lines = [];
             let line = '';
             
             for (let n = 0; n < words.length; n++) {
-                const testLine = line + words[n] + ' ';
+                const word = words[n];
+                const testLine = line + word + ' ';
                 const metrics = context.measureText(testLine);
                 const testWidth = metrics.width;
                 
-                if (testWidth > maxWidth && n > 0) {
+                if (testWidth > maxWidth && line.trim().length > 0) {
+                    // Current line is full, start new line
                     lines.push(line.trim());
-                    line = words[n] + ' ';
+                    
+                    // Check if the current word itself is too long
+                    if (context.measureText(word).width > maxWidth) {
+                        const wordParts = breakLongWord(word, maxWidth, context);
+                        for (let i = 0; i < wordParts.length - 1; i++) {
+                            lines.push(wordParts[i]);
+                        }
+                        line = wordParts[wordParts.length - 1] + ' ';
+                    } else {
+                        line = word + ' ';
+                    }
+                } else if (testWidth > maxWidth && line.trim().length === 0) {
+                    // First word on line is too long, break it
+                    const wordParts = breakLongWord(word, maxWidth, context);
+                    for (let i = 0; i < wordParts.length - 1; i++) {
+                        lines.push(wordParts[i]);
+                    }
+                    line = wordParts[wordParts.length - 1] + ' ';
                 } else {
                     line = testLine;
                 }
@@ -384,40 +430,24 @@
 
         function wrapText(text, x, y, maxWidth, fontSize, hasOutline, outlineColor, outlineWidth) {
             const lineHeight = fontSize * 1.2;
-            const words = text.split(' ');
-            let line = '';
+            const lines = getTextLines(text, maxWidth, ctx);
             let currentY = y;
             
-            for (let n = 0; n < words.length; n++) {
-                const testLine = line + words[n] + ' ';
-                const metrics = ctx.measureText(testLine);
-                const testWidth = metrics.width;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
                 
-                if (testWidth > maxWidth && n > 0) {
-                    // Render the current line
-                    if (hasOutline) {
-                        ctx.strokeStyle = outlineColor || '#000000';
-                        ctx.lineWidth = outlineWidth || 2;
-                        ctx.strokeText(line.trim(), x, currentY);
-                    }
-                    ctx.fillText(line.trim(), x, currentY);
-                    
-                    // Start new line
-                    line = words[n] + ' ';
-                    currentY += lineHeight;
-                } else {
-                    line = testLine;
-                }
-            }
-            
-            // Render the final line
-            if (line.trim()) {
+                // Render outline if enabled
                 if (hasOutline) {
                     ctx.strokeStyle = outlineColor || '#000000';
                     ctx.lineWidth = outlineWidth || 2;
-                    ctx.strokeText(line.trim(), x, currentY);
+                    ctx.strokeText(line, x, currentY);
                 }
-                ctx.fillText(line.trim(), x, currentY);
+                
+                // Render the text
+                ctx.fillText(line, x, currentY);
+                
+                // Move to next line
+                currentY += lineHeight;
             }
         }
 
