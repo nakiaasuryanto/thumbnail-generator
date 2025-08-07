@@ -140,8 +140,25 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-600">Color:</label>
+                                    <label class="block text-sm font-medium text-gray-600">Text Color:</label>
                                     <input type="color" id="fieldColor" value="#ffffff" class="w-full h-10 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Text Outline:</label>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <input type="checkbox" id="fieldOutline" class="rounded">
+                                        <label for="fieldOutline" class="text-sm">Enable Outline</label>
+                                    </div>
+                                    <div id="outlineControls" class="space-y-2 hidden">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600">Outline Color:</label>
+                                            <input type="color" id="fieldOutlineColor" value="#000000" class="w-full h-8 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600">Outline Width:</label>
+                                            <input type="number" id="fieldOutlineWidth" min="1" max="10" value="2" class="w-full px-3 py-2 border rounded-md">
+                                        </div>
+                                    </div>
                                 </div>
                                 <button id="deleteFieldBtn" class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                                     🗑️ Delete Field
@@ -319,7 +336,7 @@
                 ctx.textBaseline = 'top';
                 
                 const maxWidth = field.width - 20;
-                wrapText(field.text || field.label, textX, textY, maxWidth, field.fontSize);
+                wrapText(field.text || field.label, textX, textY, maxWidth, field.fontSize, field.hasOutline, field.outlineColor, field.outlineWidth);
                 
                 if (currentMode === 'admin' && selectedTextField === field) {
                     ctx.strokeStyle = '#4f46e5';
@@ -334,7 +351,7 @@
             });
         }
 
-        function wrapText(text, x, y, maxWidth, lineHeight) {
+        function wrapText(text, x, y, maxWidth, lineHeight, hasOutline, outlineColor, outlineWidth) {
             const words = text.split(' ');
             let line = '';
             let currentY = y;
@@ -345,9 +362,11 @@
                 const testWidth = metrics.width;
                 
                 if (testWidth > maxWidth && n > 0) {
-                    ctx.strokeStyle = '#000000';
-                    ctx.lineWidth = 2;
-                    ctx.strokeText(line, x, currentY);
+                    if (hasOutline) {
+                        ctx.strokeStyle = outlineColor || '#000000';
+                        ctx.lineWidth = outlineWidth || 2;
+                        ctx.strokeText(line, x, currentY);
+                    }
                     ctx.fillText(line, x, currentY);
                     line = words[n] + ' ';
                     currentY += lineHeight * 1.2;
@@ -356,9 +375,11 @@
                 }
             }
             
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 2;
-            ctx.strokeText(line, x, currentY);
+            if (hasOutline) {
+                ctx.strokeStyle = outlineColor || '#000000';
+                ctx.lineWidth = outlineWidth || 2;
+                ctx.strokeText(line, x, currentY);
+            }
             ctx.fillText(line, x, currentY);
         }
 
@@ -516,7 +537,10 @@
                 fontSize: 36,
                 color: '#ffffff',
                 fontFamily: 'Poppins',
-                fontWeight: '700'
+                fontWeight: '700',
+                hasOutline: false,
+                outlineColor: '#000000',
+                outlineWidth: 2
             };
             
             textFields.push(newField);
@@ -536,6 +560,17 @@
             document.getElementById('fieldFont').value = selectedTextField.fontFamily || 'Poppins';
             document.getElementById('fieldWeight').value = selectedTextField.fontWeight || '700';
             document.getElementById('fieldColor').value = selectedTextField.color;
+            document.getElementById('fieldOutline').checked = selectedTextField.hasOutline || false;
+            document.getElementById('fieldOutlineColor').value = selectedTextField.outlineColor || '#000000';
+            document.getElementById('fieldOutlineWidth').value = selectedTextField.outlineWidth || 2;
+            
+            // Show/hide outline controls based on checkbox
+            const outlineControls = document.getElementById('outlineControls');
+            if (selectedTextField.hasOutline) {
+                outlineControls.classList.remove('hidden');
+            } else {
+                outlineControls.classList.add('hidden');
+            }
         }
 
         function hideTextFieldProperties() {
@@ -552,6 +587,17 @@
             selectedTextField.fontFamily = document.getElementById('fieldFont').value;
             selectedTextField.fontWeight = document.getElementById('fieldWeight').value;
             selectedTextField.color = document.getElementById('fieldColor').value;
+            selectedTextField.hasOutline = document.getElementById('fieldOutline').checked;
+            selectedTextField.outlineColor = document.getElementById('fieldOutlineColor').value;
+            selectedTextField.outlineWidth = parseInt(document.getElementById('fieldOutlineWidth').value);
+            
+            // Show/hide outline controls
+            const outlineControls = document.getElementById('outlineControls');
+            if (selectedTextField.hasOutline) {
+                outlineControls.classList.remove('hidden');
+            } else {
+                outlineControls.classList.add('hidden');
+            }
             
             redraw();
         }
@@ -599,7 +645,10 @@
                         fontSize: field.fontSize,
                         color: field.color,
                         fontFamily: field.fontFamily || 'Poppins',
-                        fontWeight: field.fontWeight || '700'
+                        fontWeight: field.fontWeight || '700',
+                        hasOutline: field.hasOutline || false,
+                        outlineColor: field.outlineColor || '#000000',
+                        outlineWidth: field.outlineWidth || 2
                     })),
                     createdAt: new Date().toISOString()
                 };
@@ -801,7 +850,10 @@
                     fontSize: fieldConfig.fontSize,
                     color: fieldConfig.color,
                     fontFamily: fieldConfig.fontFamily || 'Poppins',
-                    fontWeight: fieldConfig.fontWeight || '700'
+                    fontWeight: fieldConfig.fontWeight || '700',
+                    hasOutline: fieldConfig.hasOutline || false,
+                    outlineColor: fieldConfig.outlineColor || '#000000',
+                    outlineWidth: fieldConfig.outlineWidth || 2
                 };
                 textFields[fieldIndex] = textField;
             } else {
@@ -921,6 +973,9 @@
             document.getElementById('fieldFont').addEventListener('change', updateSelectedTextField);
             document.getElementById('fieldWeight').addEventListener('change', updateSelectedTextField);
             document.getElementById('fieldColor').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldOutline').addEventListener('change', updateSelectedTextField);
+            document.getElementById('fieldOutlineColor').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldOutlineWidth').addEventListener('input', updateSelectedTextField);
             
             // User events
             document.getElementById('loadTemplateBtn').onclick = loadTemplate;
