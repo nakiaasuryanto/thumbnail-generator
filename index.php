@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thumbnail Generator khusus buat Mas Anam </title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Montserrat:wght@400;700;900&family=Inter:wght@400;700;900&family=Roboto:wght@400;700;900&family=Open+Sans:wght@400;700&family=Lato:wght@400;700;900&family=Source+Sans+Pro:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700;900&family=Nunito:wght@400;700;900&family=Jost:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .canvas-container {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            max-width: 100%;
+            max-height: 80vh;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            max-width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+        
+        .mode-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen py-8">
+    <div class="container mx-auto px-4 max-w-7xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🚀 Thumbnail Generator khusus buat Mas Anam </h1>
+            <p class="text-gray-600">Kaloo clear cache isinya ilang ya boshh!</p>
+        </div>
+        
+        <!-- Mode Switcher -->
+        <div class="flex justify-center mb-8">
+            <div class="bg-white rounded-lg p-2 shadow-lg">
+                <button id="adminModeBtn" class="mode-btn px-6 py-2 rounded-md font-semibold active">
+                    👨‍💻 Buat template disini
+                </button>
+                <button id="userModeBtn" class="mode-btn px-6 py-2 rounded-md font-semibold">
+                    👤 Upload foto disini
+                </button>
+            </div>
+        </div>
+        
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Canvas Area -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-xl p-6">
+                    <div class="flex justify-center mb-4">
+                        <div class="canvas-container w-full max-w-2xl">
+                            <canvas id="canvas" width="1080" height="1080"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Controls Panel -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-xl p-6">
+                    
+                    <!-- Admin Mode Controls -->
+                    <div id="adminControls" class="space-y-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Admin Controls</h3>
+                        
+                        <!-- Frame Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Frame</label>
+                            <input type="file" id="frameUpload" accept="image/*" class="hidden">
+                            <button onclick="document.getElementById('frameUpload').click()" 
+                                    class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                🖼️ Choose Frame
+                            </button>
+                            <div id="frameStatus" class="mt-2 text-sm text-gray-600"></div>
+                        </div>
+                        
+                        <!-- Add Text Field -->
+                        <div>
+                            <button id="addTextFieldBtn" 
+                                    class="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                ➕ Add Text Field
+                            </button>
+                        </div>
+                        
+                        <!-- Text Field Properties -->
+                        <div id="textFieldProperties" class="hidden">
+                            <h4 class="font-semibold text-gray-700 mb-2">Text Properties:</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Label:</label>
+                                    <input type="text" id="fieldLabel" value="Name" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Font Size:</label>
+                                    <input type="number" id="fieldFontSize" min="12" max="100" value="36" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Box Width:</label>
+                                    <input type="number" id="fieldWidth" min="50" max="500" value="200" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Box Height:</label>
+                                    <input type="number" id="fieldHeight" min="30" max="200" value="50" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Font Family:</label>
+                                    <select id="fieldFont" class="w-full px-3 py-2 border rounded-md">
+                                        <option value="Poppins">Poppins</option>
+                                        <option value="SF Pro Display">SF Pro Display</option>
+                                        <option value="Jost">Jost</option>
+                                        <option value="Montserrat">Montserrat</option>
+                                        <option value="Inter">Inter</option>
+                                        <option value="Roboto">Roboto</option>
+                                        <option value="Open Sans">Open Sans</option>
+                                        <option value="Lato">Lato</option>
+                                        <option value="Source Sans Pro">Source Sans Pro</option>
+                                        <option value="Oswald">Oswald</option>
+                                        <option value="Raleway">Raleway</option>
+                                        <option value="Nunito">Nunito</option>
+                                        <option value="Arial">Arial</option>
+                                        <option value="Helvetica">Helvetica</option>
+                                        <option value="Times New Roman">Times New Roman</option>
+                                        <option value="Georgia">Georgia</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Font Weight:</label>
+                                    <select id="fieldWeight" class="w-full px-3 py-2 border rounded-md">
+                                        <option value="400">Regular (400)</option>
+                                        <option value="700" selected>Bold (700)</option>
+                                        <option value="900">Black (900)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Line Height:</label>
+                                    <input type="number" id="fieldLineHeight" min="0.5" max="3.0" step="0.1" value="1.2" placeholder="1.2 (Normal)" class="w-full px-3 py-2 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Text Color:</label>
+                                    <input type="color" id="fieldColor" value="#ffffff" class="w-full h-10 border rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-600">Text Outline:</label>
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <input type="checkbox" id="fieldOutline" class="rounded">
+                                        <label for="fieldOutline" class="text-sm">Enable Outline</label>
+                                    </div>
+                                    <div id="outlineControls" class="space-y-2 hidden">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600">Outline Color:</label>
+                                            <input type="color" id="fieldOutlineColor" value="#000000" class="w-full h-8 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600">Outline Width:</label>
+                                            <input type="number" id="fieldOutlineWidth" min="1" max="10" value="2" class="w-full px-3 py-2 border rounded-md">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="deleteFieldBtn" class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    🗑️ Delete Field
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Save Template -->
+                        <div>
+                            <input type="text" id="templateName" placeholder="Template name..." class="w-full px-3 py-2 border rounded-md mb-2">
+                            <button id="saveTemplateBtn" 
+                                    class="w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                                💾 Save Template (Browser)
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- User Mode Controls -->
+                    <div id="userControls" class="space-y-6 hidden">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">User Controls</h3>
+                        
+                        <!-- Load Template -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Template:</label>
+                            <select id="templateSelect" class="w-full px-3 py-2 border rounded-md mb-2">
+                                <option value="">-- Select Template --</option>
+                            </select>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="loadTemplateBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                    📂 Load
+                                </button>
+                                <button id="deleteTemplateBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                            <button id="clearAllTemplatesBtn" class="w-full mt-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900">
+                                🗑️ Clear All
+                            </button>
+                        </div>
+                        
+                        <!-- Photo Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Photo:</label>
+                            <input type="file" id="photoUpload" accept="image/*" class="hidden">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="document.getElementById('photoUpload').click()" 
+                                        class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                    📸 Choose
+                                </button>
+                                <button id="deletePhotoBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Text Inputs -->
+                        <div id="userTextInputs" class="space-y-3">
+                            <!-- Dynamic inputs will appear here -->
+                        </div>
+                        
+                        <!-- Download -->
+                        <div>
+                            <button id="downloadBtn" 
+                                    class="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                ⬇️ Download Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let canvas, ctx;
+        let currentMode = 'admin';
+        let currentTemplate = null;
+        let canvasWidth = 1080, canvasHeight = 1080;
+        
+        // Canvas objects
+        let frameImage = null;
+        let userPhoto = null;
+        let textFields = [];
+        let selectedTextField = null;
+        
+        // Mouse handling
+        let isDragging = false;
+        let isResizing = false;
+        let isDraggingPhoto = false;
+        let isResizingPhoto = false;
+        let dragStartX, dragStartY;
+
+        // Initialize
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            
+            clearCanvas();
+            
+            if ('fonts' in document) {
+                document.fonts.ready.then(() => {
+                    redraw();
+                });
+            }
+            
+            resizeCanvas();
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        function redraw() {
+            clearCanvas();
+            
+            // Draw user photo
+            if (userPhoto) {
+                ctx.drawImage(userPhoto.img, userPhoto.x, userPhoto.y, userPhoto.width, userPhoto.height);
+                
+                if (currentMode === 'user' && userPhoto.selected) {
+                    ctx.strokeStyle = '#4f46e5';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(userPhoto.x, userPhoto.y, userPhoto.width, userPhoto.height);
+                    
+                    const handleSize = 12;
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.fillRect(userPhoto.x + userPhoto.width - handleSize/2, userPhoto.y + userPhoto.height - handleSize/2, handleSize, handleSize);
+                }
+            }
+            
+            // Draw frame
+            if (frameImage) {
+                ctx.drawImage(frameImage, 0, 0, canvasWidth, canvasHeight);
+            }
+            
+            // Draw text fields
+            textFields.forEach(field => {
+                if (currentMode === 'admin') {
+                    ctx.fillStyle = 'rgba(0, 100, 255, 0.1)';
+                    ctx.fillRect(field.x, field.y, field.width, field.height);
+                    
+                    ctx.strokeStyle = '#4f46e5';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
+                    ctx.strokeRect(field.x, field.y, field.width, field.height);
+                    ctx.setLineDash([]);
+                }
+                
+                const textX = field.x + 10;
+                const fontWeight = field.fontWeight || '700';
+                const fontFamily = field.fontFamily || 'Poppins';
+                
+                // Add proper fallbacks for different font families
+                let fontStack = fontFamily;
+                if (fontFamily === 'SF Pro Display') {
+                    fontStack = '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial';
+                } else if (fontFamily !== 'Arial' && fontFamily !== 'Helvetica' && fontFamily !== 'Times New Roman' && fontFamily !== 'Georgia') {
+                    fontStack = `"${fontFamily}", Arial, sans-serif`;
+                }
+                
+                ctx.font = `${fontWeight} ${field.fontSize}px ${fontStack}`;
+                ctx.fillStyle = field.color;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                
+                const maxWidth = field.width - 20;
+                const text = field.text || field.label;
+                
+                // Calculate text height for vertical centering
+                const lineHeightMultiplier = field.lineHeight || 1.2;
+                const lineHeight = field.fontSize * lineHeightMultiplier;
+                const lines = getTextLines(text, maxWidth, ctx);
+                const totalTextHeight = lines.length * lineHeight;
+                const textY = field.y + (field.height - totalTextHeight) / 2;
+                
+                wrapText(text, textX, textY, maxWidth, field.fontSize, lineHeightMultiplier, field.hasOutline, field.outlineColor, field.outlineWidth);
+                
+                if (currentMode === 'admin' && selectedTextField === field) {
+                    ctx.strokeStyle = '#4f46e5';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([]);
+                    ctx.strokeRect(field.x, field.y, field.width, field.height);
+                    
+                    const handleSize = 8;
+                    ctx.fillStyle = '#4f46e5';
+                    ctx.fillRect(field.x + field.width - handleSize/2, field.y + field.height - handleSize/2, handleSize, handleSize);
+                }
+            });
+        }
+
+        function breakLongWord(word, maxWidth, context) {
+            if (context.measureText(word).width <= maxWidth) {
+                return [word];
+            }
+            
+            const parts = [];
+            let currentPart = '';
+            
+            for (let i = 0; i < word.length; i++) {
+                const testPart = currentPart + word[i];
+                const testWidth = context.measureText(testPart + '-').width;
+                
+                if (testWidth > maxWidth && currentPart.length > 0) {
+                    parts.push(currentPart + '-');
+                    currentPart = word[i];
+                } else {
+                    currentPart = testPart;
+                }
+            }
+            
+            if (currentPart) {
+                parts.push(currentPart);
+            }
+            
+            return parts;
+        }
+
+        function getTextLines(text, maxWidth, context) {
+            const words = text.split(' ');
+            const lines = [];
+            let line = '';
+            
+            for (let n = 0; n < words.length; n++) {
+                const word = words[n];
+                const testLine = line + word + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                
+                if (testWidth > maxWidth && line.trim().length > 0) {
+                    // Current line is full, start new line
+                    lines.push(line.trim());
+                    
+                    // Check if the current word itself is too long
+                    if (context.measureText(word).width > maxWidth) {
+                        const wordParts = breakLongWord(word, maxWidth, context);
+                        for (let i = 0; i < wordParts.length - 1; i++) {
+                            lines.push(wordParts[i]);
+                        }
+                        line = wordParts[wordParts.length - 1] + ' ';
+                    } else {
+                        line = word + ' ';
+                    }
+                } else if (testWidth > maxWidth && line.trim().length === 0) {
+                    // First word on line is too long, break it
+                    const wordParts = breakLongWord(word, maxWidth, context);
+                    for (let i = 0; i < wordParts.length - 1; i++) {
+                        lines.push(wordParts[i]);
+                    }
+                    line = wordParts[wordParts.length - 1] + ' ';
+                } else {
+                    line = testLine;
+                }
+            }
+            
+            if (line.trim()) {
+                lines.push(line.trim());
+            }
+            
+            return lines;
+        }
+
+        function wrapText(text, x, y, maxWidth, fontSize, lineHeightMultiplier, hasOutline, outlineColor, outlineWidth) {
+            const lineHeight = fontSize * (lineHeightMultiplier || 1.2);
+            const lines = getTextLines(text, maxWidth, ctx);
+            let currentY = y;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                
+                // Render outline if enabled
+                if (hasOutline) {
+                    ctx.strokeStyle = outlineColor || '#000000';
+                    ctx.lineWidth = outlineWidth || 2;
+                    ctx.strokeText(line, x, currentY);
+                }
+                
+                // Render the text
+                ctx.fillText(line, x, currentY);
+                
+                // Move to next line
+                currentY += lineHeight;
+            }
+        }
+
+        // Mouse handling
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            if (currentMode === 'user' && userPhoto) {
+                const handleSize = 12;
+                if (mouseX >= userPhoto.x + userPhoto.width - handleSize && mouseX <= userPhoto.x + userPhoto.width + handleSize &&
+                    mouseY >= userPhoto.y + userPhoto.height - handleSize && mouseY <= userPhoto.y + userPhoto.height + handleSize) {
+                    isResizingPhoto = true;
+                    userPhoto.selected = true;
+                    dragStartX = mouseX;
+                    dragStartY = mouseY;
+                    canvas.style.cursor = 'se-resize';
+                    return;
+                }
+                
+                if (mouseX >= userPhoto.x && mouseX <= userPhoto.x + userPhoto.width && 
+                    mouseY >= userPhoto.y && mouseY <= userPhoto.y + userPhoto.height) {
+                    isDraggingPhoto = true;
+                    userPhoto.selected = true;
+                    dragStartX = mouseX - userPhoto.x;
+                    dragStartY = mouseY - userPhoto.y;
+                    canvas.style.cursor = 'move';
+                    redraw();
+                    return;
+                } else {
+                    userPhoto.selected = false;
+                }
+            }
+            
+            if (currentMode === 'admin') {
+                for (let field of textFields) {
+                    const handleSize = 8;
+                    if (mouseX >= field.x + field.width - handleSize && mouseX <= field.x + field.width + handleSize &&
+                        mouseY >= field.y + field.height - handleSize && mouseY <= field.y + field.height + handleSize) {
+                        selectedTextField = field;
+                        isResizing = true;
+                        dragStartX = mouseX;
+                        dragStartY = mouseY;
+                        updateTextFieldProperties();
+                        canvas.style.cursor = 'se-resize';
+                        redraw();
+                        return;
+                    }
+                    
+                    if (mouseX >= field.x && mouseX <= field.x + field.width && 
+                        mouseY >= field.y && mouseY <= field.y + field.height) {
+                        selectedTextField = field;
+                        isDragging = true;
+                        dragStartX = mouseX - field.x;
+                        dragStartY = mouseY - field.y;
+                        updateTextFieldProperties();
+                        canvas.style.cursor = 'move';
+                        redraw();
+                        return;
+                    }
+                }
+                
+                selectedTextField = null;
+                hideTextFieldProperties();
+                canvas.style.cursor = 'crosshair';
+                redraw();
+            }
+        }
+
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            if (isDraggingPhoto && userPhoto) {
+                userPhoto.x = mouseX - dragStartX;
+                userPhoto.y = mouseY - dragStartY;
+                redraw();
+            } else if (isResizingPhoto && userPhoto) {
+                const newWidth = Math.max(50, mouseX - userPhoto.x);
+                const newHeight = Math.max(50, mouseY - userPhoto.y);
+                const aspectRatio = userPhoto.img.width / userPhoto.img.height;
+                
+                if (newWidth / aspectRatio <= newHeight) {
+                    userPhoto.width = newWidth;
+                    userPhoto.height = newWidth / aspectRatio;
+                } else {
+                    userPhoto.height = newHeight;
+                    userPhoto.width = newHeight * aspectRatio;
+                }
+                
+                redraw();
+            } else if (isDragging && selectedTextField) {
+                selectedTextField.x = mouseX - dragStartX;
+                selectedTextField.y = mouseY - dragStartY;
+                redraw();
+            } else if (isResizing && selectedTextField) {
+                const newWidth = Math.max(50, mouseX - selectedTextField.x);
+                const newHeight = Math.max(30, mouseY - selectedTextField.y);
+                selectedTextField.width = newWidth;
+                selectedTextField.height = newHeight;
+                
+                document.getElementById('fieldWidth').value = newWidth;
+                document.getElementById('fieldHeight').value = newHeight;
+                
+                redraw();
+            }
+        }
+
+        function handleMouseUp(e) {
+            isDragging = false;
+            isResizing = false;
+            isDraggingPhoto = false;
+            isResizingPhoto = false;
+            canvas.style.cursor = 'crosshair';
+        }
+
+        // Admin functions
+        function handleFrameUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    frameImage = img;
+                    canvasWidth = img.width;
+                    canvasHeight = img.height;
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+                    resizeCanvas();
+                    redraw();
+                    document.getElementById('frameStatus').textContent = `Frame loaded: ${file.name} (${img.width}x${img.height})`;
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addTextField() {
+            const newField = {
+                id: 'field_' + Date.now(),
+                label: 'Text Field',
+                text: 'Sample Text',
+                x: 100,
+                y: 100,
+                width: 200,
+                height: 50,
+                fontSize: 36,
+                color: '#ffffff',
+                fontFamily: 'Poppins',
+                fontWeight: '700',
+                lineHeight: 1.2,
+                hasOutline: false,
+                outlineColor: '#000000',
+                outlineWidth: 2
+            };
+            
+            textFields.push(newField);
+            selectedTextField = newField;
+            updateTextFieldProperties();
+            redraw();
+        }
+
+        function updateTextFieldProperties() {
+            if (!selectedTextField) return;
+            
+            document.getElementById('textFieldProperties').classList.remove('hidden');
+            document.getElementById('fieldLabel').value = selectedTextField.label;
+            document.getElementById('fieldFontSize').value = selectedTextField.fontSize;
+            document.getElementById('fieldWidth').value = selectedTextField.width;
+            document.getElementById('fieldHeight').value = selectedTextField.height;
+            document.getElementById('fieldFont').value = selectedTextField.fontFamily || 'Poppins';
+            document.getElementById('fieldWeight').value = selectedTextField.fontWeight || '700';
+            document.getElementById('fieldLineHeight').value = selectedTextField.lineHeight || 1.2;
+            document.getElementById('fieldColor').value = selectedTextField.color;
+            document.getElementById('fieldOutline').checked = selectedTextField.hasOutline || false;
+            document.getElementById('fieldOutlineColor').value = selectedTextField.outlineColor || '#000000';
+            document.getElementById('fieldOutlineWidth').value = selectedTextField.outlineWidth || 2;
+            
+            // Show/hide outline controls based on checkbox
+            const outlineControls = document.getElementById('outlineControls');
+            if (selectedTextField.hasOutline) {
+                outlineControls.classList.remove('hidden');
+            } else {
+                outlineControls.classList.add('hidden');
+            }
+        }
+
+        function hideTextFieldProperties() {
+            document.getElementById('textFieldProperties').classList.add('hidden');
+        }
+
+        function updateSelectedTextField() {
+            if (!selectedTextField) return;
+            
+            selectedTextField.label = document.getElementById('fieldLabel').value;
+            selectedTextField.fontSize = parseInt(document.getElementById('fieldFontSize').value);
+            selectedTextField.width = parseInt(document.getElementById('fieldWidth').value);
+            selectedTextField.height = parseInt(document.getElementById('fieldHeight').value);
+            selectedTextField.fontFamily = document.getElementById('fieldFont').value;
+            selectedTextField.fontWeight = document.getElementById('fieldWeight').value;
+            selectedTextField.lineHeight = parseFloat(document.getElementById('fieldLineHeight').value);
+            selectedTextField.color = document.getElementById('fieldColor').value;
+            selectedTextField.hasOutline = document.getElementById('fieldOutline').checked;
+            selectedTextField.outlineColor = document.getElementById('fieldOutlineColor').value;
+            selectedTextField.outlineWidth = parseInt(document.getElementById('fieldOutlineWidth').value);
+            
+            // Show/hide outline controls
+            const outlineControls = document.getElementById('outlineControls');
+            if (selectedTextField.hasOutline) {
+                outlineControls.classList.remove('hidden');
+            } else {
+                outlineControls.classList.add('hidden');
+            }
+            
+            redraw();
+        }
+
+        function deleteSelectedTextField() {
+            if (!selectedTextField) return;
+            
+            textFields = textFields.filter(f => f !== selectedTextField);
+            selectedTextField = null;
+            hideTextFieldProperties();
+            redraw();
+        }
+
+        // Database functions
+        function saveTemplate() {
+            const templateName = document.getElementById('templateName').value.trim();
+            if (!templateName) {
+                alert('❌ Please enter a template name');
+                return;
+            }
+            
+            // Validate template name (alphanumeric, spaces, dashes, underscores only)
+            if (!/^[a-zA-Z0-9\s\-_]+$/.test(templateName)) {
+                alert('❌ Template name can only contain letters, numbers, spaces, dashes and underscores');
+                return;
+            }
+            
+            if (!frameImage) {
+                alert('❌ Please upload a frame first');
+                return;
+            }
+            
+            try {
+                const template = {
+                    name: templateName,
+                    frame: frameImage.src,
+                    canvasWidth: canvasWidth,
+                    canvasHeight: canvasHeight,
+                    textFields: textFields.map(field => ({
+                        label: field.label,
+                        x: field.x,
+                        y: field.y,
+                        width: field.width,
+                        height: field.height,
+                        fontSize: field.fontSize,
+                        color: field.color,
+                        fontFamily: field.fontFamily || 'Poppins',
+                        fontWeight: field.fontWeight || '700',
+                        lineHeight: field.lineHeight || 1.2,
+                        hasOutline: field.hasOutline || false,
+                        outlineColor: field.outlineColor || '#000000',
+                        outlineWidth: field.outlineWidth || 2
+                    }))
+                };
+                
+                // Check data size before saving
+                const templateJSON = JSON.stringify(template);
+                const sizeInMB = new Blob([templateJSON]).size / (1024 * 1024);
+                
+                if (sizeInMB > 10) {
+                    alert('❌ Template too large (>10MB). Try using a smaller frame image.');
+                    return;
+                }
+                
+                // Save to database via API
+                fetch('api/templates.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(template)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Template saved to database!');
+                        document.getElementById('templateName').value = '';
+                        loadTemplatesList(); // Refresh the templates list
+                    } else {
+                        alert('❌ Error saving template: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Save error:', error);
+                    alert('❌ Error saving template: ' + error.message);
+                });
+                
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('❌ Error saving template: ' + error.message);
+            }
+        }
+
+        function loadTemplatesList() {
+            try {
+                const select = document.getElementById('templateSelect');
+                select.innerHTML = '<option value="">-- Select Template --</option>';
+                
+                // Load templates from database
+                fetch('api/templates.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        data.data.forEach(template => {
+                            const option = document.createElement('option');
+                            option.value = template.id;
+                            option.textContent = template.name;
+                            select.appendChild(option);
+                        });
+                    } else {
+                        console.error('Failed to load templates:', data.message);
+                        select.innerHTML = '<option value="">-- Error loading templates --</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Load templates error:', error);
+                    select.innerHTML = '<option value="">-- Error loading templates --</option>';
+                });
+                
+            } catch (error) {
+                console.error('Load list error:', error);
+                document.getElementById('templateSelect').innerHTML = '<option value="">-- Error loading templates --</option>';
+            }
+        }
+
+        function loadTemplate() {
+            const templateId = document.getElementById('templateSelect').value;
+            if (!templateId) return;
+            
+            try {
+                // Load template from database
+                fetch(`api/templates.php?id=${templateId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentTemplate = data.data;
+                        
+                        // Load frame
+                        const img = new Image();
+                        img.onload = function() {
+                            frameImage = img;
+                            canvasWidth = currentTemplate.canvas_width;
+                            canvasHeight = currentTemplate.canvas_height;
+                            canvas.width = canvasWidth;
+                            canvas.height = canvasHeight;
+                            resizeCanvas();
+                            redraw();
+                        };
+                        img.src = currentTemplate.frame_image;
+                        
+                        // Create input fields
+                        createUserInputFields();
+                        alert('✅ Template loaded from database!');
+                        
+                    } else {
+                        alert('❌ Error loading template: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Load template error:', error);
+                    alert('❌ Error loading template: ' + error.message);
+                });
+                
+            } catch (error) {
+                console.error('Load error:', error);
+                alert('❌ Error loading template: ' + error.message);
+            }
+        }
+
+        function deleteTemplate() {
+            const templateName = document.getElementById('templateSelect').value;
+            if (!templateName) {
+                alert('❌ Please select a template to delete');
+                return;
+            }
+            
+            if (!confirm(`🗑️ Delete "${templateName}"?`)) {
+                return;
+            }
+            
+            try {
+                const savedTemplates = JSON.parse(localStorage.getItem('thumbnailTemplates') || '{}');
+                delete savedTemplates[templateName];
+                localStorage.setItem('thumbnailTemplates', JSON.stringify(savedTemplates));
+                
+                loadTemplatesList();
+                
+                if (currentTemplate && currentTemplate.name === templateName) {
+                    currentTemplate = null;
+                    frameImage = null;
+                    textFields = [];
+                    userPhoto = null;
+                    document.getElementById('userTextInputs').innerHTML = '';
+                    redraw();
+                }
+                
+                alert('✅ Template deleted!');
+                
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('❌ Error deleting template: ' + error.message);
+            }
+        }
+
+        function clearAllTemplates() {
+            if (!confirm('🗑️ Delete ALL templates?')) {
+                return;
+            }
+            
+            try {
+                localStorage.removeItem('thumbnailTemplates');
+                loadTemplatesList();
+                
+                currentTemplate = null;
+                frameImage = null;
+                textFields = [];
+                userPhoto = null;
+                document.getElementById('userTextInputs').innerHTML = '';
+                redraw();
+                
+                alert('✅ All templates cleared!');
+                
+            } catch (error) {
+                console.error('Clear error:', error);
+                alert('❌ Error clearing templates: ' + error.message);
+            }
+        }
+
+        function createUserInputFields() {
+            const container = document.getElementById('userTextInputs');
+            container.innerHTML = '';
+            
+            if (!currentTemplate || !currentTemplate.text_fields) return;
+            
+            currentTemplate.text_fields.forEach((field, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label class="block text-sm font-medium text-gray-600">${field.label}:</label>
+                    <input type="text" data-field-index="${index}" 
+                           class="user-text-input w-full px-3 py-2 border rounded-md" 
+                           placeholder="Enter ${field.label}...">
+                `;
+                container.appendChild(div);
+            });
+            
+            document.querySelectorAll('.user-text-input').forEach(input => {
+                input.addEventListener('input', updateUserText);
+            });
+        }
+
+        function updateUserText(e) {
+            const fieldIndex = parseInt(e.target.dataset.fieldIndex);
+            const text = e.target.value;
+            const fieldConfig = currentTemplate.text_fields[fieldIndex];
+            
+            let textField = textFields[fieldIndex];
+            if (!textField) {
+                textField = {
+                    id: 'user_' + fieldIndex,
+                    label: fieldConfig.label,
+                    text: text,
+                    x: fieldConfig.x,
+                    y: fieldConfig.y,
+                    width: fieldConfig.width,
+                    height: fieldConfig.height,
+                    fontSize: fieldConfig.fontSize,
+                    color: fieldConfig.color,
+                    fontFamily: fieldConfig.fontFamily || 'Poppins',
+                    fontWeight: fieldConfig.fontWeight || '700',
+                    lineHeight: fieldConfig.lineHeight || 1.2,
+                    hasOutline: fieldConfig.hasOutline || false,
+                    outlineColor: fieldConfig.outlineColor || '#000000',
+                    outlineWidth: fieldConfig.outlineWidth || 2
+                };
+                textFields[fieldIndex] = textField;
+            } else {
+                textField.text = text;
+            }
+            
+            redraw();
+        }
+
+        function handlePhotoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const scale = Math.min(canvasWidth / img.width, canvasHeight / img.height);
+                    const scaledWidth = img.width * scale;
+                    const scaledHeight = img.height * scale;
+                    
+                    userPhoto = {
+                        img: img,
+                        x: (canvasWidth - scaledWidth) / 2,
+                        y: (canvasHeight - scaledHeight) / 2,
+                        width: scaledWidth,
+                        height: scaledHeight,
+                        selected: false
+                    };
+                    
+                    redraw();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function deletePhoto() {
+            userPhoto = null;
+            redraw();
+        }
+
+        function downloadImage() {
+            const wasSelected = userPhoto && userPhoto.selected;
+            if (userPhoto) userPhoto.selected = false;
+            
+            redraw();
+            
+            const link = document.createElement('a');
+            const firstTextInput = document.querySelector('.user-text-input');
+            const filename = firstTextInput && firstTextInput.value.trim() 
+                ? `${firstTextInput.value.trim()}.png` 
+                : 'thumbnail.png';
+            
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            if (wasSelected && userPhoto) userPhoto.selected = true;
+            redraw();
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            document.getElementById('adminModeBtn').classList.toggle('active', mode === 'admin');
+            document.getElementById('userModeBtn').classList.toggle('active', mode === 'user');
+            document.getElementById('adminControls').classList.toggle('hidden', mode !== 'admin');
+            document.getElementById('userControls').classList.toggle('hidden', mode !== 'user');
+            
+            if (mode === 'admin') {
+                selectedTextField = null;
+                hideTextFieldProperties();
+                if (userPhoto) userPhoto.selected = false;
+            } else {
+                loadTemplatesList();
+                textFields = [];
+                userPhoto = null;
+            }
+            
+            redraw();
+        }
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const containerWidth = container.clientWidth - 4;
+            const containerHeight = window.innerHeight * 0.8;
+            
+            const scaleX = containerWidth / canvasWidth;
+            const scaleY = containerHeight / canvasHeight;
+            const scale = Math.min(scaleX, scaleY, 1);
+            
+            canvas.style.width = (canvasWidth * scale) + 'px';
+            canvas.style.height = (canvasHeight * scale) + 'px';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            
+            document.getElementById('adminModeBtn').onclick = () => switchMode('admin');
+            document.getElementById('userModeBtn').onclick = () => switchMode('user');
+            
+            // Admin events
+            document.getElementById('frameUpload').addEventListener('change', handleFrameUpload);
+            document.getElementById('addTextFieldBtn').onclick = addTextField;
+            document.getElementById('saveTemplateBtn').onclick = saveTemplate;
+            document.getElementById('deleteFieldBtn').onclick = deleteSelectedTextField;
+            
+            // Properties
+            document.getElementById('fieldLabel').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldFontSize').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldWidth').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldHeight').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldFont').addEventListener('change', updateSelectedTextField);
+            document.getElementById('fieldWeight').addEventListener('change', updateSelectedTextField);
+            document.getElementById('fieldLineHeight').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldColor').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldOutline').addEventListener('change', updateSelectedTextField);
+            document.getElementById('fieldOutlineColor').addEventListener('input', updateSelectedTextField);
+            document.getElementById('fieldOutlineWidth').addEventListener('input', updateSelectedTextField);
+            
+            // User events
+            document.getElementById('loadTemplateBtn').onclick = loadTemplate;
+            document.getElementById('deleteTemplateBtn').onclick = deleteTemplate;
+            document.getElementById('clearAllTemplatesBtn').onclick = clearAllTemplates;
+            document.getElementById('photoUpload').addEventListener('change', handlePhotoUpload);
+            document.getElementById('deletePhotoBtn').onclick = deletePhoto;
+            document.getElementById('downloadBtn').onclick = downloadImage;
+            
+            window.addEventListener('resize', resizeCanvas);
+        });
+    </script>
+</body>
+</html>
