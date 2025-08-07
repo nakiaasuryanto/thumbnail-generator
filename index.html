@@ -528,6 +528,12 @@
                 return;
             }
             
+            // Validate template name (alphanumeric, spaces, dashes, underscores only)
+            if (!/^[a-zA-Z0-9\s\-_]+$/.test(templateName)) {
+                alert('❌ Template name can only contain letters, numbers, spaces, dashes and underscores');
+                return;
+            }
+            
             if (!frameImage) {
                 alert('❌ Please upload a frame first');
                 return;
@@ -551,16 +557,45 @@
                     createdAt: new Date().toISOString()
                 };
                 
+                // Check data size before saving
+                const templateJSON = JSON.stringify(template);
+                const sizeInMB = new Blob([templateJSON]).size / (1024 * 1024);
+                
+                if (sizeInMB > 4) {
+                    alert('❌ Template too large (>4MB). Try using a smaller frame image.');
+                    return;
+                }
+                
                 const savedTemplates = JSON.parse(localStorage.getItem('thumbnailTemplates') || '{}');
                 savedTemplates[templateName] = template;
-                localStorage.setItem('thumbnailTemplates', JSON.stringify(savedTemplates));
+                
+                // Test if we can actually save it
+                const fullData = JSON.stringify(savedTemplates);
+                const fullSizeInMB = new Blob([fullData]).size / (1024 * 1024);
+                
+                if (fullSizeInMB > 8) {
+                    alert('❌ Storage full. Please delete some templates first.');
+                    return;
+                }
+                
+                localStorage.setItem('thumbnailTemplates', fullData);
                 
                 alert('✅ Template saved to browser!');
                 document.getElementById('templateName').value = '';
                 
             } catch (error) {
                 console.error('Save error:', error);
-                alert('❌ Error saving template: ' + error.message);
+                let errorMsg = error.message;
+                
+                if (error.name === 'QuotaExceededError') {
+                    errorMsg = 'Browser storage is full. Please delete some templates.';
+                } else if (error.message.includes('circular structure')) {
+                    errorMsg = 'Invalid template data structure.';
+                } else if (error.message.includes('pattern')) {
+                    errorMsg = 'Template name contains invalid characters.';
+                }
+                
+                alert('❌ Error saving template: ' + errorMsg);
             }
         }
 
