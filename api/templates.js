@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://db.forgfekdtgwcejthjhcz.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvcmdmZWtkdGd3Y2VqdGhqaGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2MTk3NjUsImV4cCI6MjA3MDE5NTc2NX0.-GrttEsBJYpl6_CVE8zTtNuTKFsr5YjzVwEhTCd5j4w';
+const supabaseUrl = 'https://forgfekdtgwcejthjhcz.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvcmdmZWtkdGd3Y2VqdGhqaGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2MTk3NjUsImV4cCI6MjA3MDE5NTc2NX0.-GrttEsBJYpl6_CVE8zTtNuTKFsr5YjzVwEhTCd5j4w';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -131,7 +131,8 @@ export default async function handler(req, res) {
         console.error('API Error:', error);
         return res.status(500).json({ 
             success: false, 
-            error: 'Server error: ' + error.message 
+            error: 'Server error: ' + error.message,
+            stack: error.stack
         });
     }
 }
