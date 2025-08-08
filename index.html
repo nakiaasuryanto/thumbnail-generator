@@ -788,15 +788,20 @@
                 fetch('api/templates')
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Templates loaded:', data);
                     if (data.success) {
-                        data.data.forEach(template => {
-                            const option = document.createElement('option');
-                            option.value = template.id;
-                            option.textContent = template.name;
-                            select.appendChild(option);
-                        });
+                        if (data.data && data.data.length > 0) {
+                            data.data.forEach(template => {
+                                const option = document.createElement('option');
+                                option.value = template.id;
+                                option.textContent = template.name;
+                                select.appendChild(option);
+                            });
+                        } else {
+                            select.innerHTML = '<option value="">-- No templates found --</option>';
+                        }
                     } else {
-                        console.error('Failed to load templates:', data.message);
+                        console.error('Failed to load templates:', data.message || data.error);
                         select.innerHTML = '<option value="">-- Error loading templates --</option>';
                     }
                 })
