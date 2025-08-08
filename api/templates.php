@@ -110,6 +110,6 @@ try {
             break;
     }
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => 'Server error: ' . $e->getMessage(), 'line' => $e->getLine(), 'file' => basename($e->getFile())]);
 }
 ?>
