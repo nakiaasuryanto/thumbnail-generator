@@ -688,6 +688,43 @@
             redraw();
         }
 
+        // Image compression function
+        function compressImage(canvas, maxSizeKB = 100) {
+            // Try PNG first (lossless)
+            let compressedDataUrl = canvas.toDataURL('image/png');
+            
+            // If PNG is too large, try JPEG with high quality (minimal quality loss)
+            if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) { // base64 is ~33% larger
+                compressedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                
+                // If still too large, try slightly lower quality
+                if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
+                    compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                }
+            }
+            
+            return compressedDataUrl;
+        }
+
+        // Upload image to Supabase Storage for large files
+        async function uploadToStorage(canvas, fileName) {
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            const formData = new FormData();
+            formData.append('file', blob, fileName);
+            
+            try {
+                const response = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                return data.success ? data.url : null;
+            } catch (error) {
+                console.error('Upload error:', error);
+                return null;
+            }
+        }
+
         // Database functions
         function saveTemplate() {
             const templateName = document.getElementById('templateName').value.trim();
@@ -710,7 +747,7 @@
             try {
                 const template = {
                     name: templateName,
-                    frame: frameImage.src,
+                    frame: finalFrame,
                     canvasWidth: canvasWidth,
                     canvasHeight: canvasHeight,
                     textFields: textFields.map(field => ({
@@ -734,9 +771,18 @@
                 const templateJSON = JSON.stringify(template);
                 const sizeInMB = new Blob([templateJSON]).size / (1024 * 1024);
                 
-                if (sizeInMB > 10) {
-                    alert('❌ Template too large (>10MB). Try using a smaller frame image.');
-                    return;
+                // Compress image for efficient storage
+                const compressedFrame = compressImage(canvas);
+                const compressedSizeInMB = compressedFrame.length / (1024 * 1024);
+                
+                let finalFrame = compressedFrame;
+                
+                // If compressed image is still large, use Supabase Storage
+                if (compressedSizeInMB > 0.5) { // 500KB threshold
+                    const storageUrl = await uploadToStorage(canvas, `template-${Date.now()}.png`);
+                    if (storageUrl) {
+                        finalFrame = storageUrl; // Store URL instead of base64
+                    }
                 }
                 
                 // Save to database via API
