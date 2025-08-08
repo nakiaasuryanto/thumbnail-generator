@@ -688,24 +688,32 @@
             redraw();
         }
 
-        // Image compression function with aggressive compression
-        function compressImage(canvas, maxSizeKB = 50) {
-            // Start with high compression JPEG
-            let compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        // Image compression function that preserves transparency
+        function compressImage(canvas, maxSizeKB = 100) {
+            // Always use PNG to preserve transparency
+            let compressedDataUrl = canvas.toDataURL('image/png');
             
-            // If still too large, compress more aggressively
+            // If PNG is too large, reduce canvas size and redraw
             if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
-                compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-            }
-            
-            // If still too large, compress even more
-            if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
-                compressedDataUrl = canvas.toDataURL('image/jpeg', 0.4);
-            }
-            
-            // Final compression if needed
-            if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
-                compressedDataUrl = canvas.toDataURL('image/jpeg', 0.2);
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // Reduce size by 80%
+                tempCanvas.width = canvas.width * 0.8;
+                tempCanvas.height = canvas.height * 0.8;
+                
+                // Redraw at smaller size
+                tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                compressedDataUrl = tempCanvas.toDataURL('image/png');
+                
+                // If still too large, reduce to 60%
+                if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
+                    tempCanvas.width = canvas.width * 0.6;
+                    tempCanvas.height = canvas.height * 0.6;
+                    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                    compressedDataUrl = tempCanvas.toDataURL('image/png');
+                }
             }
             
             return compressedDataUrl;
