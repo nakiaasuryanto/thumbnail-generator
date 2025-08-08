@@ -745,6 +745,20 @@
             }
             
             try {
+                // Compress image for efficient storage
+                const compressedFrame = compressImage(canvas);
+                const compressedSizeInMB = compressedFrame.length / (1024 * 1024);
+                
+                let finalFrame = compressedFrame;
+                
+                // If compressed image is still large, use Supabase Storage
+                if (compressedSizeInMB > 0.5) { // 500KB threshold
+                    const storageUrl = await uploadToStorage(canvas, `template-${Date.now()}.png`);
+                    if (storageUrl) {
+                        finalFrame = storageUrl; // Store URL instead of base64
+                    }
+                }
+
                 const template = {
                     name: templateName,
                     frame: finalFrame,
@@ -766,20 +780,6 @@
                         outlineWidth: field.outlineWidth || 2
                     }))
                 };
-                
-                // Compress image for efficient storage
-                const compressedFrame = compressImage(canvas);
-                const compressedSizeInMB = compressedFrame.length / (1024 * 1024);
-                
-                let finalFrame = compressedFrame;
-                
-                // If compressed image is still large, use Supabase Storage
-                if (compressedSizeInMB > 0.5) { // 500KB threshold
-                    const storageUrl = await uploadToStorage(canvas, `template-${Date.now()}.png`);
-                    if (storageUrl) {
-                        finalFrame = storageUrl; // Store URL instead of base64
-                    }
-                }
 
                 // Save to database via API
                 fetch('api/templates', {
