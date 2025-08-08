@@ -688,24 +688,30 @@
             redraw();
         }
 
-        // Aggressive image compression that preserves transparency
-        function compressImage(canvas, maxSizeKB = 20) {
+        // Moderate image compression that preserves transparency and quality
+        function compressImage(canvas, maxSizeKB = 80) {
             let compressedDataUrl = canvas.toDataURL('image/png');
             
-            // If PNG is too large, use progressively smaller sizes
-            const scales = [0.8, 0.6, 0.4, 0.2];
-            
-            for (let scale of scales) {
-                if (compressedDataUrl.length <= maxSizeKB * 1024 * 4/3) break;
-                
+            // If PNG is too large, reduce size slightly
+            if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
                 const tempCanvas = document.createElement('canvas');
                 const tempCtx = tempCanvas.getContext('2d');
                 
-                tempCanvas.width = Math.floor(canvas.width * scale);
-                tempCanvas.height = Math.floor(canvas.height * scale);
+                // Reduce size by 85% (gentle compression)
+                tempCanvas.width = Math.floor(canvas.width * 0.85);
+                tempCanvas.height = Math.floor(canvas.height * 0.85);
                 
                 tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
                 compressedDataUrl = tempCanvas.toDataURL('image/png');
+                
+                // If still too large, reduce to 70%
+                if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
+                    tempCanvas.width = Math.floor(canvas.width * 0.7);
+                    tempCanvas.height = Math.floor(canvas.height * 0.7);
+                    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                    compressedDataUrl = tempCanvas.toDataURL('image/png');
+                }
             }
             
             return compressedDataUrl;
