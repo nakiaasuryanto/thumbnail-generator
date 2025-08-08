@@ -23,8 +23,8 @@ class Database {
     // Save template
     public function saveTemplate($name, $frame, $canvas_width, $canvas_height, $text_fields) {
         $stmt = $this->pdo->prepare("
-            INSERT INTO templates (name, frame_image, canvas_width, canvas_height, text_fields, created_at) 
-            VALUES (?, ?, ?, ?, ?, NOW())
+            INSERT INTO templates (name, frame_image, canvas_width, canvas_height, text_fields) 
+            VALUES (?, ?, ?, ?, ?)
         ");
         
         return $stmt->execute([
@@ -40,7 +40,7 @@ class Database {
     public function updateTemplate($id, $name, $frame, $canvas_width, $canvas_height, $text_fields) {
         $stmt = $this->pdo->prepare("
             UPDATE templates 
-            SET name = ?, frame_image = ?, canvas_width = ?, canvas_height = ?, text_fields = ?, updated_at = NOW()
+            SET name = ?, frame_image = ?, canvas_width = ?, canvas_height = ?, text_fields = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         ");
         
