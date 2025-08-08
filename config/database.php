@@ -1,10 +1,26 @@
 <?php
-// Database configuration
-define('DB_HOST', $_ENV['DB_HOST'] ?? 'naxx-mac.local');
-define('DB_NAME', $_ENV['DB_NAME'] ?? 'thumbnail_generator');
-define('DB_USER', $_ENV['DB_USER'] ?? 'root');
-define('DB_PASS', $_ENV['DB_PASS'] ?? 'Bismillah9');
-define('DB_CHARSET', 'utf8mb4');
+// Database configuration - supports both local MySQL and Supabase PostgreSQL
+if (isset($_ENV['DATABASE_URL'])) {
+    // Vercel deployment - use Supabase PostgreSQL
+    $database_url = $_ENV['DATABASE_URL'] ?? 'postgresql://postgres:Nakia270406.@db.forgfekdtgwcejthjhcz.supabase.co:5432/postgres';
+    $url = parse_url($database_url);
+    
+    define('DB_HOST', $url['host']);
+    define('DB_NAME', ltrim($url['path'], '/'));
+    define('DB_USER', $url['user']);
+    define('DB_PASS', $url['pass']);
+    define('DB_PORT', $url['port'] ?? 5432);
+    
+    $dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME;
+} else {
+    // Local MAMP - use MySQL
+    define('DB_HOST', 'naxx-mac.local');
+    define('DB_NAME', 'thumbnail_generator');
+    define('DB_USER', 'root');
+    define('DB_PASS', 'Bismillah9');
+    
+    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+}
 
 // Database connection options
 $db_options = [
@@ -14,7 +30,6 @@ $db_options = [
 ];
 
 try {
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $db_options);
 } catch (PDOException $e) {
     die('Database connection failed: ' . $e->getMessage());
