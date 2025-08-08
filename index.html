@@ -745,15 +745,26 @@
             }
             
             try {
+                // Create a temporary canvas with just the frame for compression
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvasWidth;
+                tempCanvas.height = canvasHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // Draw only the frame image
+                if (frameImage) {
+                    tempCtx.drawImage(frameImage, 0, 0, canvasWidth, canvasHeight);
+                }
+                
                 // Compress image for efficient storage
-                const compressedFrame = compressImage(canvas);
+                const compressedFrame = compressImage(tempCanvas);
                 const compressedSizeInMB = compressedFrame.length / (1024 * 1024);
                 
                 let finalFrame = compressedFrame;
                 
                 // If compressed image is still large, use Supabase Storage
                 if (compressedSizeInMB > 0.5) { // 500KB threshold
-                    const storageUrl = await uploadToStorage(canvas, `template-${Date.now()}.png`);
+                    const storageUrl = await uploadToStorage(tempCanvas, `template-${Date.now()}.png`);
                     if (storageUrl) {
                         finalFrame = storageUrl; // Store URL instead of base64
                     }
