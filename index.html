@@ -688,46 +688,29 @@
             redraw();
         }
 
-        // Image compression function
-        function compressImage(canvas, maxSizeKB = 100) {
-            // Try PNG first (lossless)
-            let compressedDataUrl = canvas.toDataURL('image/png');
+        // Image compression function with aggressive compression
+        function compressImage(canvas, maxSizeKB = 50) {
+            // Start with high compression JPEG
+            let compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
             
-            // If PNG is too large, try JPEG with high quality (minimal quality loss)
-            if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) { // base64 is ~33% larger
-                compressedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
-                
-                // If still too large, try slightly lower quality
-                if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
-                    compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                }
+            // If still too large, compress more aggressively
+            if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
+                compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            }
+            
+            // If still too large, compress even more
+            if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
+                compressedDataUrl = canvas.toDataURL('image/jpeg', 0.4);
+            }
+            
+            // Final compression if needed
+            if (compressedDataUrl.length > maxSizeKB * 1024 * 4/3) {
+                compressedDataUrl = canvas.toDataURL('image/jpeg', 0.2);
             }
             
             return compressedDataUrl;
         }
 
-        // Upload image to Supabase Storage for large files
-        async function uploadToStorage(canvas, fileName) {
-            const base64Data = canvas.toDataURL('image/png');
-            
-            try {
-                const response = await fetch('/api/upload-image', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        image: base64Data,
-                        fileName: fileName
-                    })
-                });
-                const data = await response.json();
-                return data.success ? data.url : null;
-            } catch (error) {
-                console.error('Upload error:', error);
-                return null;
-            }
-        }
 
         // Database functions
         async function saveTemplate() {
@@ -761,18 +744,10 @@
                 }
                 
                 // Compress image for efficient storage
-                const compressedFrame = compressImage(tempCanvas);
-                const compressedSizeInMB = compressedFrame.length / (1024 * 1024);
+                const finalFrame = compressImage(tempCanvas);
+                const compressedSizeInKB = finalFrame.length / 1024;
                 
-                let finalFrame = compressedFrame;
-                
-                // If compressed image is still large, use Supabase Storage
-                if (compressedSizeInMB > 0.5) { // 500KB threshold
-                    const storageUrl = await uploadToStorage(tempCanvas, `template-${Date.now()}.png`);
-                    if (storageUrl) {
-                        finalFrame = storageUrl; // Store URL instead of base64
-                    }
-                }
+                console.log(`Image compressed to ${compressedSizeInKB.toFixed(1)}KB`);
 
                 const template = {
                     name: templateName,
