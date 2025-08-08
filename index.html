@@ -747,7 +747,18 @@
                     },
                     body: JSON.stringify(template)
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.text().then(text => {
+                        console.log('Response text:', text);
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                            throw new Error('Server returned: ' + text);
+                        }
+                    });
+                })
                 .then(data => {
                     if (data.success) {
                         alert('✅ Template saved to database!');
