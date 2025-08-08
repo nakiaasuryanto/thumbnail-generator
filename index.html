@@ -726,7 +726,7 @@
         }
 
         // Database functions
-        function saveTemplate() {
+        async function saveTemplate() {
             const templateName = document.getElementById('templateName').value.trim();
             if (!templateName) {
                 alert('❌ Please enter a template name');
@@ -767,10 +767,6 @@
                     }))
                 };
                 
-                // Check data size before saving
-                const templateJSON = JSON.stringify(template);
-                const sizeInMB = new Blob([templateJSON]).size / (1024 * 1024);
-                
                 // Compress image for efficient storage
                 const compressedFrame = compressImage(canvas);
                 const compressedSizeInMB = compressedFrame.length / (1024 * 1024);
@@ -784,7 +780,7 @@
                         finalFrame = storageUrl; // Store URL instead of base64
                     }
                 }
-                
+
                 // Save to database via API
                 fetch('api/templates', {
                     method: 'POST',
