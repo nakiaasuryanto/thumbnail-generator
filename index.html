@@ -740,7 +740,7 @@
                 }
                 
                 // Save to database via API
-                fetch('templates.php', {
+                fetch('api/templates.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -774,7 +774,7 @@
                 select.innerHTML = '<option value="">-- Select Template --</option>';
                 
                 // Load templates from database
-                fetch('templates.php')
+                fetch('api/templates.php')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -806,7 +806,7 @@
             
             try {
                 // Load template from database
-                fetch(`templates.php?id=${templateId}`)
+                fetch(`api/templates.php?id=${templateId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
