@@ -1,9 +1,9 @@
 <?php
 // Database configuration
-define('DB_HOST', 'naxx-mac.local');
-define('DB_NAME', 'thumbnail_generator');
-define('DB_USER', 'root');
-define('DB_PASS', 'Bismillah9');
+define('DB_HOST', $_ENV['DB_HOST'] ?? 'naxx-mac.local');
+define('DB_NAME', $_ENV['DB_NAME'] ?? 'thumbnail_generator');
+define('DB_USER', $_ENV['DB_USER'] ?? 'root');
+define('DB_PASS', $_ENV['DB_PASS'] ?? 'Bismillah9');
 define('DB_CHARSET', 'utf8mb4');
 
 // Database connection options

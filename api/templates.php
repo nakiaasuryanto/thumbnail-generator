@@ -10,6 +10,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 $db = new Database();
 
 try {
+    // Test database connection
+    $db->getTemplates();
+    
     switch ($method) {
         case 'GET':
             if (isset($_GET['id'])) {
