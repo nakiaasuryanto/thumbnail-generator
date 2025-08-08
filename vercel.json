@@ -1,7 +1,13 @@
 {
   "functions": {
-    "api/templates.php": {
+    "api/index.php": {
       "runtime": "vercel-php@0.7.0"
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/api/templates(.*)",
+      "dest": "/api/index.php?path=templates"
+    }
+  ]
 }
