@@ -708,14 +708,18 @@
 
         // Upload image to Supabase Storage for large files
         async function uploadToStorage(canvas, fileName) {
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-            const formData = new FormData();
-            formData.append('file', blob, fileName);
+            const base64Data = canvas.toDataURL('image/png');
             
             try {
                 const response = await fetch('/api/upload-image', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        image: base64Data,
+                        fileName: fileName
+                    })
                 });
                 const data = await response.json();
                 return data.success ? data.url : null;

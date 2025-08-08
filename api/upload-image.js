@@ -21,12 +21,16 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Get the uploaded file from FormData
-        const { file } = req.body;
+        // Get the base64 image data
+        const { image, fileName: originalFileName } = req.body;
         
-        if (!file) {
-            return res.status(400).json({ success: false, error: 'No file provided' });
+        if (!image) {
+            return res.status(400).json({ success: false, error: 'No image provided' });
         }
+
+        // Convert base64 to buffer
+        const base64Data = image.replace(/^data:image\/png;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
 
         // Generate unique filename
         const fileName = `templates/${uuidv4()}.png`;
@@ -34,7 +38,7 @@ export default async function handler(req, res) {
         // Upload to Supabase Storage
         const { data, error } = await supabase.storage
             .from('images')
-            .upload(fileName, file, {
+            .upload(fileName, buffer, {
                 contentType: 'image/png',
                 upsert: false
             });
